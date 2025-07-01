@@ -252,7 +252,7 @@ export class MojoLSPManager extends DisposableContext {
     };
 
     const module = this.extensionContext.asAbsolutePath(
-      path.join('lsp-proxy', 'out', 'proxy.js'),
+      path.join('out', 'proxy.js'),
     );
     const serverOptions: vscodelc.ServerOptions = {
       run: { module, transport: TransportKind.ipc },

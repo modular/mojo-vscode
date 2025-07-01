@@ -11,3 +11,4 @@ CONTRIBUTING.md
 .prettierrc
 .vscode-test.mjs
 **/*.ts
+node_modules/**
