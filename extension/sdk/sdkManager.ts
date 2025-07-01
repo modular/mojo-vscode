@@ -423,7 +423,7 @@ export class MAXSDKManager extends DisposableContext {
     for (const file of otherOpenMojoFiles) {
       visiblePaths.push(file.uri.fsPath);
     }
-    for (let workspaceFolder of vscode.workspace.workspaceFolders || []) {
+    for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
       visiblePaths.push(workspaceFolder.uri.fsPath);
     }
     return this.findDevSDKSpecsFromSubPaths(visiblePaths);

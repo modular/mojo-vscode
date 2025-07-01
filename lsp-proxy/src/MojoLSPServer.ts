@@ -90,7 +90,9 @@ export class MojoLSPServer extends DisposableContext {
         // guarantee that no listener is invoked when the process dies.
         try {
           this.serverProcess.kill();
-        } catch {}
+        } catch (e) {
+          console.error(e);
+        }
       }),
     );
   }

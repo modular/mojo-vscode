@@ -19,7 +19,7 @@ export class LineSeparatedStream {
     onLine: (line: string) => void,
   ) {
     let buffer = '';
-    rawStream.on('data', (chunk: any) => {
+    rawStream.on('data', (chunk: string) => {
       if (!this.enabled) {
         return;
       }
@@ -56,7 +56,7 @@ export class JSONRPCStream {
     onNotification: (notification: JSONObject) => void,
     onOutgoingRequest: (request: JSONObject) => void,
   ) {
-    rawStream.on('data', (chunk: any) => {
+    rawStream.on('data', (chunk: string) => {
       if (!this.enabled) {
         return;
       }

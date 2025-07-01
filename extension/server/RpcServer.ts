@@ -74,7 +74,7 @@ export class RpcServer extends DisposableContext {
     this.logger = logger;
 
     this.server = net.createServer({ allowHalfOpen: true });
-    let clients: net.Socket[] = [];
+    const clients: net.Socket[] = [];
     this.server.on('error', (err) => this.onError(err));
     this.server.on('connection', (socket) => {
       this.configureSocket(socket);
@@ -126,7 +126,7 @@ export class RpcServer extends DisposableContext {
         throw new Error(maybeErrorMessage);
       }
     }
-    let success = await debug.startDebugging(
+    const success = await debug.startDebugging(
       /*workspaceFolder=*/ undefined,
       debugConfig,
     );

@@ -7,7 +7,8 @@
 import { Logger } from '../logging';
 import { MAXSDKVersion } from './sdkVersion';
 import * as util from 'util';
-const execFile = util.promisify(require('child_process').execFile);
+import { execFile as execFileBase } from 'child_process';
+const execFile = util.promisify(execFileBase);
 
 /**
  * This class represents a subset of the Modular config object used by extension
@@ -84,7 +85,7 @@ export class MAXSDKConfig {
     configSection: string,
   ): Promise<Optional<MAXSDKVersion>> {
     try {
-      let { stdout, stderr } = await execFile(driverPath, ['--version'], {
+      const { stdout, stderr } = await execFile(driverPath, ['--version'], {
         env: { ...process.env },
         encoding: 'utf-8',
       });
@@ -94,7 +95,7 @@ export class MAXSDKConfig {
         return undefined;
       }
 
-      let match = stdout.toString().match(/mojo\s+([0-9]+)\.([0-9]+)\.(.*)/);
+      const match = stdout.toString().match(/mojo\s+([0-9]+)\.([0-9]+)\.(.*)/);
 
       if (!match) {
         return undefined;

@@ -25,7 +25,7 @@ export function registerFormatter(maxSDKManager: MAXSDKManager) {
         return [];
       }
 
-      let env = sdk.getProcessEnv();
+      const env = sdk.getProcessEnv();
 
       return new Promise<vscode.TextEdit[]>(function (resolve, reject) {
         const originalDocumentText = document.getText();

@@ -7,7 +7,7 @@
 import { quote, parse } from 'shell-quote';
 import * as vscode from 'vscode';
 import { DisposableContext } from '../utils/disposableContext';
-import path = require('path');
+import * as path from 'path';
 import * as config from '../utils/config';
 import { MAXSDK } from '../sdk/sdk';
 import { MAXSDKManager } from '../sdk/sdkManager';
@@ -142,21 +142,21 @@ class ExecutionManager extends DisposableContext {
    * @param options Options to consider when executing the file.
    */
   async executeFileInTerminal(file: Optional<vscode.Uri>) {
-    let doc = await this.getDocumentToExecute(file);
+    const doc = await this.getDocumentToExecute(file);
 
     if (!doc) {
       return;
     }
 
     // Find the config for processing this file.
-    let sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
+    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
 
     if (!sdk) {
       return;
     }
 
     // Execute the file.
-    let terminal = this.getTerminalForFile(doc, sdk);
+    const terminal = this.getTerminalForFile(doc, sdk);
     terminal.show();
     terminal.sendText(
       quote([
@@ -187,13 +187,13 @@ class ExecutionManager extends DisposableContext {
    *     Debug Console.
    */
   async debugFile(file: Optional<vscode.Uri>, runInTerminal: boolean) {
-    let doc = await this.getDocumentToExecute(file);
+    const doc = await this.getDocumentToExecute(file);
 
     if (!doc) {
       return;
     }
 
-    let debugConfig: MojoDebugConfiguration = {
+    const debugConfig: MojoDebugConfiguration = {
       type: 'mojo-lldb',
       name: 'Mojo',
       request: 'launch',
@@ -215,10 +215,12 @@ class ExecutionManager extends DisposableContext {
     const fullId = `${doc.fileName} · ${sdk.config.modularHomePath}`;
     // We have to keep the full terminal name short so that VS Code renders it nicely,
     // and we have to keep it unique among other files.
-    let terminalName = `Mojo: ${path.basename(doc.fileName)} · ${md5(fullId).substring(0, 5)}`;
+    const terminalName = `Mojo: ${path.basename(doc.fileName)} · ${md5(fullId).substring(0, 5)}`;
 
     // Look for an existing terminal.
-    let terminal = vscode.window.terminals.find((t) => t.name === terminalName);
+    const terminal = vscode.window.terminals.find(
+      (t) => t.name === terminalName,
+    );
 
     if (terminal) {
       return terminal;
@@ -244,7 +246,7 @@ class ExecutionManager extends DisposableContext {
   async getDocumentToExecute(
     file?: vscode.Uri,
   ): Promise<Optional<vscode.TextDocument>> {
-    let doc =
+    const doc =
       file === undefined
         ? vscode.window.activeTextEditor?.document
         : await vscode.workspace.openTextDocument(file);

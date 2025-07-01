@@ -6,7 +6,7 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import path = require('path');
+import * as path from 'path';
 import { firstValueFrom } from 'rxjs';
 import { extension } from '../extension';
 

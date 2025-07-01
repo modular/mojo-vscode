@@ -180,7 +180,7 @@ export class MojoLSPManager extends DisposableContext {
       return;
     }
 
-    let sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ true);
+    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ true);
 
     if (!sdk) {
       return;
@@ -217,7 +217,7 @@ export class MojoLSPManager extends DisposableContext {
   ): vscodelc.LanguageClient {
     this.logger.lsp.info('Activating language client');
 
-    let serverArgs: string[] = [];
+    const serverArgs: string[] = [];
 
     for (const includeDir of includeDirs) {
       serverArgs.push('-I', includeDir);
@@ -293,7 +293,7 @@ export class MojoLSPManager extends DisposableContext {
     };
 
     // Create the language client and start the client.
-    let languageClient = new vscodelc.LanguageClient(
+    const languageClient = new vscodelc.LanguageClient(
       'mojo-lsp',
       'Mojo Language Client',
       serverOptions,

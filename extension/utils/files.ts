@@ -54,7 +54,7 @@ export function getAllOpenMojoFiles(): [
       ? new WorkspaceAwareFile(activeRawUri)
       : undefined;
 
-  let otherOpenFiles = vscode.window.tabGroups.all
+  const otherOpenFiles = vscode.window.tabGroups.all
     .flatMap((tabGroup) => tabGroup.tabs)
     .map((tab) => (tab.input as any)?.uri)
     .filter(isMojoFile)
@@ -73,7 +73,9 @@ export async function directoryExists(path: string): Promise<boolean> {
     if (stat.type & vscode.FileType.Directory) {
       return true;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(e);
+  }
   return false;
 }
 
@@ -83,7 +85,9 @@ export async function fileExists(path: string): Promise<boolean> {
     if (stat.type & (vscode.FileType.File | vscode.FileType.SymbolicLink)) {
       return true;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(e);
+  }
   return false;
 }
 

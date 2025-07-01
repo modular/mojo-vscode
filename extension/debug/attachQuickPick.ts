@@ -25,7 +25,7 @@ interface ProcessItem extends vscode.QuickPickItem {
 async function getProcessItems(
   context: vscode.ExtensionContext,
 ): Promise<ProcessItem[]> {
-  let processes: ProcessDescriptor[] = await psList(context);
+  const processes: ProcessDescriptor[] = await psList(context);
   processes.filter((p) => p.pid !== undefined);
 
   processes.sort((a, b) => {

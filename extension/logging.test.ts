@@ -8,7 +8,7 @@ import * as assert from 'assert';
 import { LogChannel, LogLevel } from './logging';
 
 function createLogSpy(): [string[], (level: string, message: string) => void] {
-  let lines: string[] = [];
+  const lines: string[] = [];
   return [
     lines,
     (_level: string, message: string) => {

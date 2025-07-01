@@ -79,9 +79,9 @@ export type ExitStatus = {
   signal: NodeJS.Signals | null;
 };
 
-// The `shutdown` request doesn't have params, but using `{}` simplifies
+// The `shutdown` request doesn't have params, but using `unknown` simplifies
 // typechecking.
-export type ShutdownParams = {};
+export type ShutdownParams = unknown;
 
 /**
  * A custom request sent by the extension to record all traffic sent to

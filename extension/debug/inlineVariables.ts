@@ -132,7 +132,7 @@ export class InlineLocalVariablesProvider
     column: number,
     variable: Variable,
   ): vscode.InlineValueText {
-    let displayName = variable.evaluateName;
+    const displayName = variable.evaluateName;
     const range = new vscode.Range(
       line,
       column,
@@ -166,7 +166,7 @@ export class InlineLocalVariablesProvider
     const forbiddenBoundary = (char?: string) =>
       char !== undefined && /^[a-zA-Z0-9_]$/.test(char);
 
-    do {
+    while (true) {
       index = text.indexOf(variable.evaluateName, index + 1);
 
       if (index === -1) {
@@ -179,7 +179,7 @@ export class InlineLocalVariablesProvider
       if (!forbiddenBoundary(prev) && !forbiddenBoundary(next)) {
         return index;
       }
-    } while (true);
+    }
 
     return undefined;
   }
@@ -209,7 +209,7 @@ export class InlineLocalVariablesProvider
     if (line >= stoppedLocation.start.line) {
       return [];
     }
-    let column = this.findDeclColumn(document, line, variable);
+    const column = this.findDeclColumn(document, line, variable);
 
     // If there's no column information, we can at least show the variable in
     // the decl line.

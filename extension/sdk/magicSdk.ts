@@ -195,7 +195,7 @@ async function findVersionToDownload(
     if (nightlyVersion === undefined) {
       return undefined;
     }
-    let [major, minor, patch, dev] = nightlyVersion.split('.');
+    const [major, minor, patch, dev] = nightlyVersion.split('.');
     return [major, minor, patch + `.${dev}`];
   };
 
@@ -405,7 +405,7 @@ export async function installMagicSDK(
   await mkdirp(downloadSpec.magicDataHome);
 
   let success = false;
-  var errorMessage: string | undefined = '';
+  let errorMessage: string | undefined = '';
   try {
     logger.info('Trying to acquire installation lock...');
     const releaseLock = await acquireLockIfNeeded(

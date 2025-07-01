@@ -16,7 +16,8 @@ import { MojoExtension } from '../extension';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { quote } from 'shell-quote';
 import * as util from 'util';
-const execFile = util.promisify(require('child_process').execFile);
+import { execFile as execFileBase } from 'child_process';
+const execFile = util.promisify(execFileBase);
 
 /**
  * Stricter version of vscode.DebugConfiguration intended to reduce the chances
@@ -98,7 +99,7 @@ class MojoDebugAdapterDescriptorFactory
     session: vscode.DebugSession,
     _executable: Optional<vscode.DebugAdapterExecutable>,
   ): Promise<Optional<vscode.DebugAdapterDescriptor>> {
-    let sdk = await findSDKForDebugConfiguration(
+    const sdk = await findSDKForDebugConfiguration(
       session.configuration,
       this.sdkManager,
     );
@@ -187,7 +188,7 @@ class MojoDebugConfigurationResolver
     debugConfiguration: MojoDebugConfiguration,
     _token?: vscode.CancellationToken,
   ): Promise<undefined | vscode.DebugConfiguration> {
-    let sdk = await findSDKForDebugConfiguration(
+    const sdk = await findSDKForDebugConfiguration(
       debugConfiguration,
       this.sdkManager,
     );
@@ -275,11 +276,11 @@ class MojoDebugConfigurationResolver
 
     // Pull in the additional visualizers within the lldb-visualizers dir.
     if (await sdk.lldbHasPythonScriptingSupport()) {
-      let visualizersDir = sdk.config.mojoLLDBVisualizersPath;
-      let visualizers = await vscode.workspace.fs.readDirectory(
+      const visualizersDir = sdk.config.mojoLLDBVisualizersPath;
+      const visualizers = await vscode.workspace.fs.readDirectory(
         vscode.Uri.file(visualizersDir),
       );
-      let visualizerCommands = visualizers.map(
+      const visualizerCommands = visualizers.map(
         ([name, _type]) => `?command script import ${visualizersDir}/${name}`,
       );
       debugConfiguration.initCommands.push(...visualizerCommands);
@@ -342,7 +343,7 @@ class MojoCudaGdbDebugConfigurationResolver
     const debugConfig = debugConfigIn as vscode.DebugConfiguration;
     let args = debugConfigIn.args || [];
 
-    let sdk = await findSDKForDebugConfiguration(
+    const sdk = await findSDKForDebugConfiguration(
       debugConfigIn as vscode.DebugConfiguration,
       this.sdkManager,
     );
@@ -376,7 +377,7 @@ class MojoCudaGdbDebugConfigurationResolver
     let env = [];
     env.push(`MODULAR_HOME=${sdk.config.modularHomePath}`);
     env = [...env, ...(debugConfigIn.env || [])];
-    debugConfig.environment = env.map((envStr: String) => {
+    debugConfig.environment = env.map((envStr: string) => {
       const split = envStr.split('=');
       return { name: split[0], value: split.slice(1).join('=') };
     });

@@ -108,7 +108,7 @@ export class MojoDecoratorManager extends DisposableContext {
       // Decorate any mojo cells in the notebook.
 
       // Decorate any mojo cells in the notebook.
-      for (let cell of notebook.getCells()) {
+      for (const cell of notebook.getCells()) {
         this.decorateDocument(cell.document);
       }
     });
@@ -121,18 +121,18 @@ export class MojoDecoratorManager extends DisposableContext {
   private decorate(editor: vscode.TextEditor) {
     const text = editor.document.getText();
     const splitLines = text.split('\n');
-    let docDecorations: vscode.DecorationOptions[] = [];
+    const docDecorations: vscode.DecorationOptions[] = [];
 
     // Generate decorations for code blocks in the document. This helps
     // visually distinguish code blocks from the rest of the document.
-    const startRegEx = /^ *\`{3,}mojo$/g;
-    const endRegEx = /^ *\`{3,}$/g;
+    const startRegEx = /^ *`{3,}mojo$/g;
+    const endRegEx = /^ *`{3,}$/g;
     let numCurrentCodeBlocks = 0;
     let prevNumDecorations = 0;
     for (let line = 0, lineE = splitLines.length; line != lineE; ++line) {
       // Check for the start of a new codeblock.
-      let currentLine = splitLines[line];
-      let match = startRegEx.test(currentLine);
+      const currentLine = splitLines[line];
+      const match = startRegEx.test(currentLine);
       if (match) {
         if (numCurrentCodeBlocks++ === 0) {
           prevNumDecorations = docDecorations.length;
@@ -147,7 +147,7 @@ export class MojoDecoratorManager extends DisposableContext {
         }
 
         // Add a decoration for this code block.
-        let pos = new vscode.Position(line, 0);
+        const pos = new vscode.Position(line, 0);
         docDecorations.push({ range: new vscode.Range(pos, pos) });
       }
     }

@@ -9,7 +9,8 @@ import { MAXSDKConfig } from './sdkConfig';
 import { Memoize } from 'typescript-memoize';
 import * as util from 'util';
 import { MAXSDKKind as MAXSDKKind } from './types';
-const execFile = util.promisify(require('child_process').execFile);
+import { execFile as execFileBase } from 'child_process';
+const execFile = util.promisify(execFileBase);
 
 /**
  * Class that represents an SDK in the system.
@@ -69,7 +70,7 @@ export class MAXSDK {
    * binaries.
    */
   public getProcessEnv(withTelemetry: boolean = true): NodeJS.ProcessEnv {
-    let env = { ...process.env };
+    const env = { ...process.env };
 
     // If we had modular home provided somewhere, make sure that
     // gets propagated.

@@ -220,7 +220,7 @@ export class MojoLSPProxy {
         method: string,
         params: JSONObject,
       ) => {
-        let result = await this.client.sendRequest(method, params);
+        const result = await this.client.sendRequest(method, params);
         this.server!.sendResponse(id, result);
       },
     });

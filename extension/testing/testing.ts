@@ -164,7 +164,7 @@ export class MojoTestManager extends DisposableContext {
       if (test.tags.includes(this.docTestTag)) {
         // Track the latest code block we actually want to test. We can find
         // this by inspecting the label, which is the index of the code block.
-        let testIndex = parseInt(test.label);
+        const testIndex = parseInt(test.label);
 
         if (testIndex > (docTests.get(test.parent!) ?? -1)) {
           docTests.set(test.parent!, testIndex);
@@ -191,7 +191,7 @@ export class MojoTestManager extends DisposableContext {
     }
 
     // Build a new request that contains the expanded set of included tests.
-    let excludedTests: vscode.TestItem[] = [];
+    const excludedTests: vscode.TestItem[] = [];
     if (request.exclude) {
       request.exclude.forEach((test) => {
         if (!includedTests.has(test)) {
@@ -207,7 +207,7 @@ export class MojoTestManager extends DisposableContext {
     const run = this.controller.createTestRun(request);
 
     // Process the doc tests collected so far.
-    let testPromises = [];
+    const testPromises = [];
     for (const [test, childIdx] of docTests) {
       if (token.isCancellationRequested) {
         break;
@@ -253,7 +253,7 @@ export class MojoTestManager extends DisposableContext {
     test: vscode.TestItem,
     dependencies: vscode.TestItem[] = [],
   ) {
-    let allTests = [...dependencies, test];
+    const allTests = [...dependencies, test];
     for (const test of allTests) {
       run.enqueued(test);
       run.started(test);
@@ -267,7 +267,7 @@ export class MojoTestManager extends DisposableContext {
     };
 
     // Grab the sdk for the execution context.
-    let sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
+    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
     if (!sdk) {
       this.controller.items.delete(test.uri!.fsPath);
       return;
@@ -276,7 +276,7 @@ export class MojoTestManager extends DisposableContext {
     // Invoke the `test` subcommand of the mojo tool to discover tests in the
     // document.
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(test.uri!);
-    let result = await this.runMojoTestCommand<MojoTestExecutionResult>(
+    const result = await this.runMojoTestCommand<MojoTestExecutionResult>(
       sdk,
       test.id,
       workspaceFolder,
@@ -289,7 +289,7 @@ export class MojoTestManager extends DisposableContext {
     }
 
     // Build a map of the results keyed by the id of the test.
-    let resultsPerTest = new Map<string, MojoTestExecutionResult>();
+    const resultsPerTest = new Map<string, MojoTestExecutionResult>();
     resultsPerTest.set(result.testID, result);
 
     for (const child of result.children ?? []) {
@@ -300,7 +300,7 @@ export class MojoTestManager extends DisposableContext {
 
     // Process the tests.
     for (const test of allTests) {
-      let result = resultsPerTest.get(test.id);
+      const result = resultsPerTest.get(test.id);
       if (!result) {
         run.errored(
           test,
@@ -356,7 +356,7 @@ export class MojoTestManager extends DisposableContext {
       args.push('-I', includeDir);
     }
 
-    let env = sdk.getProcessEnv(withTelemetry);
+    const env = sdk.getProcessEnv(withTelemetry);
     const logger = this.logger;
 
     return new Promise<Optional<Result>>(function (resolve, _reject) {
@@ -391,7 +391,7 @@ export class MojoTestManager extends DisposableContext {
 
     // Invoke the mojo tool to discover tests in the document.
     // We use 'hideRepeatedErrors' because this action is automated.
-    let sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ true);
+    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ true);
     if (!sdk) {
       this.controller.items.delete(document.uri.fsPath);
       this.logger.debug(`No SDK present, clearing tests for ${document.uri}`);
@@ -401,7 +401,7 @@ export class MojoTestManager extends DisposableContext {
     // Invoke the `test` subcommand of the mojo tool to discover tests in the
     // document.
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-    let mojoTestSuite = await this.runMojoTestCommand<MojoTest>(
+    const mojoTestSuite = await this.runMojoTestCommand<MojoTest>(
       sdk,
       document.uri.fsPath,
       workspaceFolder,
@@ -439,10 +439,10 @@ export class MojoTestManager extends DisposableContext {
     if (!parent.children) {
       return;
     }
-    let vsChildren: vscode.TestItem[] = [];
-    for (let test of parent.children) {
+    const vsChildren: vscode.TestItem[] = [];
+    for (const test of parent.children) {
       let label = test.id.substring(parent.id.length);
-      let tags: vscode.TestTag[] = [];
+      const tags: vscode.TestTag[] = [];
       if (label.startsWith('@')) {
         label = label.substring(1);
       } else if (label.startsWith('::')) {
@@ -458,7 +458,11 @@ export class MojoTestManager extends DisposableContext {
         }
       }
 
-      let vsTest = this.controller.createTestItem(test.id, label, document.uri);
+      const vsTest = this.controller.createTestItem(
+        test.id,
+        label,
+        document.uri,
+      );
       if (test.location) {
         vsTest.range = new vscode.Range(
           new vscode.Position(
