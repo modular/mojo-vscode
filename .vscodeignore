@@ -10,3 +10,4 @@ eslint.config.mjs
 CONTRIBUTING.md
 .prettierrc
 .vscode-test.mjs
+**/*.ts
