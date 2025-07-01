@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as vscodelc from 'vscode-languageclient/node';
 import { TransportKind } from 'vscode-languageclient/node';
 
-import { InitializationOptions } from '../../lsp-proxy/src/types';
 import { MAXSDK } from '../sdk/sdk';
 import * as config from '../utils/config';
 import { DisposableContext } from '../utils/disposableContext';
@@ -18,6 +17,25 @@ import { Logger } from '../logging';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { TelemetryReporter } from '../telemetry';
 import { LSPRecorder } from './recorder';
+
+/**
+ * This type represents the initialization options send by the extension to the
+ * proxy.
+ */
+export interface InitializationOptions {
+  /**
+   * The path to `mojo-lsp-server`.
+   */
+  serverPath: string;
+  /**
+   * The arguments to use when invoking `mojo-lsp-server`.
+   */
+  serverArgs: string[];
+  /**
+   * The environment to use when invoking `mojo-lsp-server`.
+   */
+  serverEnv: { [env: string]: Optional<string> };
+}
 
 /**
  *  This class manages the LSP clients.
