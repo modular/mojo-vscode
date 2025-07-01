@@ -26,9 +26,8 @@
   ],
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "tsc -b ./",
-    "watch": "tsc -b -watch ./",
-    "build": "tsc -b ./ && tsc -b ./lsp-proxy",
+    "vscode:prepublish": "tsc --noEmit -p ./ && tsc --noEmit -p ./lsp-proxy && node esbuild.js",
+    "build": "node esbuild.js",
     "package": "vsce package --out ./out/vscode-mojo.vsix",
     "ci": "npm ci && cd ./lsp-proxy && npm ci",
     "format": "npx prettier . --write --ignore-path .gitignore",

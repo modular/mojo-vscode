@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 
 import * as config from './config';
 import { DisposableContext } from './disposableContext';
+import { Optional } from '../types';
 
 /**
  *  Prompt the user to see if we should restart the server.

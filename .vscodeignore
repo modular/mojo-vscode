@@ -12,3 +12,5 @@ CONTRIBUTING.md
 .vscode-test.mjs
 **/*.ts
 node_modules/**
+tsconfig.json
+esbuild.js

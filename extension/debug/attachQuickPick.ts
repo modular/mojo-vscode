@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 
 import { ProcessDescriptor, psList } from '../external/psList';
+import { Optional } from '../types';
 
 class RefreshButton implements vscode.QuickInputButton {
   get iconPath(): vscode.ThemeIcon {

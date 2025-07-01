@@ -10,6 +10,8 @@ import { MojoExtension } from '../extension';
 import { DisposableContext } from '../utils/disposableContext';
 
 import { DEBUG_TYPE } from './constants';
+import { Optional } from '../types';
+import { VariableEvaluateName, Variable, FrameId, RequestId, DAPScopesRequest, DAPVariablesRequest, DAPVariablesResponse, SessionId } from './types';
 
 /**
  *  Variables grouped by evaluate name. Multiple entries per key represent

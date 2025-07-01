@@ -6,6 +6,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { Optional } from '../types';
 
 /**
  * Utility class for handling files relative to their containing workspace

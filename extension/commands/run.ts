@@ -13,6 +13,7 @@ import { MAXSDK } from '../sdk/sdk';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { MojoDebugConfiguration } from '../debug/debug';
 import md5 from 'md5';
+import { Optional } from '../types';
 
 type FileArgs = {
   runArgs: string[];

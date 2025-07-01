@@ -8,6 +8,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as process from 'process';
 import * as vscode from 'vscode';
+import { Optional } from '../types';
 
 /**
  * Substitute the given string with some common VSCode variables.

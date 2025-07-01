@@ -17,6 +17,7 @@ import { Logger } from '../logging';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { TelemetryReporter } from '../telemetry';
 import { LSPRecorder } from './recorder';
+import { Optional } from '../types';
 
 /**
  * This type represents the initialization options send by the extension to the
