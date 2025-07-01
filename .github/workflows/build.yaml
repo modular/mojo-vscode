@@ -1,0 +1,41 @@
+name: Build extension
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build extension
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        with:
+          node-version: 20
+
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install dependencies
+        run: npm run ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Package extension
+        run: npm run package
+
+      - name: Upload extension as artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: extension-${{ github.sha }}
+          path: ./out/vscode-mojo.vsix
+          retention-days: 14
