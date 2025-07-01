@@ -35,3 +35,9 @@ jobs:
 
       - name: Run Prettier
         run: npx prettier --check .
+
+      - name: Run eslint
+        run: npx eslint
+
+      - name: Check TypeScript
+        run: npx tsc --noEmit -p . && npx tsc --noEmit -p lsp-proxy/
