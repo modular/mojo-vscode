@@ -9,7 +9,10 @@
     "target": "es6",
     "experimentalDecorators": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "emitDecoratorMetadata": false
   },
   "include": ["extension"],
   "exclude": ["node_modules", ".vscode-test"],

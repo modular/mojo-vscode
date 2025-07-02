@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "publisher": "modular-mojotools",
   "icon": "icon.png",
+  "type": "module",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -23,11 +24,10 @@
     "onUri",
     "onStartupFinished"
   ],
-  "main": "./out/extension",
+  "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "tsc -b ./",
-    "watch": "tsc -b -watch ./",
-    "build": "tsc -b ./ && tsc -b ./lsp-proxy",
+    "vscode:prepublish": "tsc --noEmit -p ./ && tsc --noEmit -p ./lsp-proxy && node esbuild.js",
+    "build": "node esbuild.js",
     "package": "vsce package --out ./out/vscode-mojo.vsix",
     "ci": "npm ci && cd ./lsp-proxy && npm ci",
     "format": "npx prettier . --write --ignore-path .gitignore",
@@ -48,6 +48,7 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^2.19.0",
+    "esbuild": "^0.25.5",
     "eslint": "^9.30.1",
     "prettier": "^3.3.3",
     "prettier-plugin-curly": "^0.2.1",

@@ -16,6 +16,7 @@ import { Logger } from '../logging';
 import { execFile } from 'child_process';
 const execFileSync = util.promisify(execFile);
 import { MAXSDKVersion as MaxSDKVersion } from './sdkVersion';
+import { Optional } from '../types';
 
 const SDK_INSTALLATION_CANCELLATION_MSG = 'SDK installation cancelled';
 type MagicInstallationResult = 'succeeded' | 'failed' | 'cancelled';

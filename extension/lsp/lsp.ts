@@ -17,6 +17,7 @@ import { Logger } from '../logging';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { TelemetryReporter } from '../telemetry';
 import { LSPRecorder } from './recorder';
+import { Optional } from '../types';
 
 /**
  * This type represents the initialization options send by the extension to the
@@ -252,7 +253,7 @@ export class MojoLSPManager extends DisposableContext {
     };
 
     const module = this.extensionContext.asAbsolutePath(
-      path.join('lsp-proxy', 'out', 'proxy.js'),
+      path.join('out', 'proxy.js'),
     );
     const serverOptions: vscodelc.ServerOptions = {
       run: { module, transport: TransportKind.ipc },

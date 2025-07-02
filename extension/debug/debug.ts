@@ -17,6 +17,7 @@ import { MAXSDKManager } from '../sdk/sdkManager';
 import { quote } from 'shell-quote';
 import * as util from 'util';
 import { execFile as execFileBase } from 'child_process';
+import { Optional } from '../types';
 const execFile = util.promisify(execFileBase);
 
 /**

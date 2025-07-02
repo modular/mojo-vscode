@@ -8,6 +8,7 @@ import { Logger } from '../logging';
 import { MAXSDKVersion } from './sdkVersion';
 import * as util from 'util';
 import { execFile as execFileBase } from 'child_process';
+import { Optional } from '../types';
 const execFile = util.promisify(execFileBase);
 
 /**

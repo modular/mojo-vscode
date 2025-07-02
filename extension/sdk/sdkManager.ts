@@ -25,6 +25,7 @@ import { MAXSDKVersion } from './sdkVersion';
 import { findMagicSDKSpec, installMagicSDK } from './magicSdk';
 import { Expected, MAXSDKSpec } from './types';
 import { Subject } from 'rxjs';
+import { Optional } from '../types';
 
 type NotYetSelectedSDK = {
   state: 'not-yet-selected';

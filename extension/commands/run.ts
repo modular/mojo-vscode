@@ -12,7 +12,8 @@ import * as config from '../utils/config';
 import { MAXSDK } from '../sdk/sdk';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { MojoDebugConfiguration } from '../debug/debug';
-import * as md5 from 'md5';
+import md5 from 'md5';
+import { Optional } from '../types';
 
 type FileArgs = {
   runArgs: string[];

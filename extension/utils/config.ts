@@ -5,6 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 import * as vscode from 'vscode';
+import { Optional } from '../types';
 
 /**
  *  Gets the config value `mojo.<key>`, with an optional workspace folder.

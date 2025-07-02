@@ -12,6 +12,7 @@ import { DisposableContext } from '../utils/disposableContext';
 import * as path from 'path';
 import { MAXSDKManager } from '../sdk/sdkManager';
 import { Logger } from '../logging';
+import { Optional } from '../types';
 
 /**
  * An interface defining a source range for a mojo test.
