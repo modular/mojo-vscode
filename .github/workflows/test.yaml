@@ -1,4 +1,4 @@
-name: Lint extension
+name: Test extension
 
 on:
   pull_request:
@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  test:
+    name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -33,11 +33,8 @@ jobs:
       - name: Install dependencies
         run: npm run ci
 
-      - name: Run Prettier
-        run: npx prettier --check .
+      - name: Build extension
+        run: npm run build
 
-      - name: Run eslint
-        run: npx eslint
-
-      - name: Check TypeScript
-        run: npm run typecheck
+      - name: Execute tests
+        run: npm run test

@@ -152,16 +152,18 @@ async function getAllNightlyMAXVersions(
         logger,
       ))
     ) {
+      logger.error("unable to download file")
       return undefined;
     }
     logger.info('Successfully downloaded');
   }
   contents = await readFile(repodataFile);
   if (!contents) {
+    logger.error("unable to read file");
     return undefined;
   }
   const jsonContents = JSON.parse(contents);
-  const packages = jsonContents.packages;
+  const packages = jsonContents["packages.conda"];
   const versions: string[] = [];
   for (const packageName in packages) {
     if (packageName.startsWith('max-')) {
@@ -169,6 +171,7 @@ async function getAllNightlyMAXVersions(
     }
   }
   versions.sort(compareNightlyMAXVersions);
+  logger.info("contents", contents);
   return versions.length === 0 ? undefined : versions;
 }
 
@@ -177,6 +180,7 @@ async function getLatestNightlyMAXVersion(
   privateDir: string,
 ): Promise<Optional<string>> {
   const versions = await getAllNightlyMAXVersions(logger, privateDir);
+  logger.info("versions", versions);
   if (versions === undefined) {
     return undefined;
   }
@@ -201,11 +205,7 @@ async function findVersionToDownload(
   };
 
   if (extVersion === '0.0.0') {
-    if (!isNightly) {
-      vscode.window.showErrorMessage(
-        'Invalid extension version: ' + extVersion,
-      );
-    }
+    logger.info("using latest nightly max");
     // If this is a dev version of the extension, we can figure out dynamically
     // what's the latest version of the sdk.
     return nightlyMaxVersionToComponents(
@@ -236,6 +236,7 @@ async function createDownloadSpec(
   if (!magicUrl) {
     return undefined;
   }
+  isNightly = true;
   const extVersion = context.extension.packageJSON.version as string;
   const versionToDownload = await findVersionToDownload(
     context,
@@ -272,6 +273,7 @@ async function doInstallMagicAndMAXSDK(
   isNightly: boolean,
   token: vscode.CancellationToken,
 ): Promise<void> {
+  isNightly = true;
   await rm(downloadSpec.doneDirectory, { recursive: true, force: true });
 
   logger.info(
@@ -352,6 +354,7 @@ async function installMagicAndMAXSDKWithProgress(
   isNightly: boolean,
   reinstall: boolean,
 ): Promise<Optional<string>> {
+  isNightly = true;
   if (!reinstall && (await directoryExists(downloadSpec.versionDoneDir))) {
     logger.info('Magic SDK present. Skipping installation.');
     return undefined;
@@ -399,6 +402,7 @@ export async function installMagicSDK(
   isNightly: boolean,
   reinstall: boolean = false,
 ): Promise<MagicInstallationResult> {
+  isNightly = true;
   const downloadSpec = await createDownloadSpec(context, isNightly, logger);
   if (downloadSpec === undefined) {
     return 'failed';
@@ -448,6 +452,7 @@ export async function findMagicSDKSpec(
   logger: Logger,
   isNightly: boolean,
 ): Promise<Optional<MAXSDKSpec>> {
+  isNightly = true;
   const downloadSpec = await createDownloadSpec(context, isNightly, logger);
   if (downloadSpec === undefined) {
     return undefined;

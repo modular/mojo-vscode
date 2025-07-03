@@ -360,9 +360,9 @@ export class MAXSDKManager extends DisposableContext {
 
   private async findAllSDKs(): Promise<MAXSDKSpec[]> {
     // If we're only going to use the release SDK specs, don't bother looking for others.
-    if (process.env['MOJO_EXTENSION_FORCE_MAGIC']) {
+    if (process.env['MOJO_EXTENSION_FORCE_MAGIC'] !== undefined) {
       const releaseSDKSpecs = await this.findMagicSDKSpecs();
-      this.logger.debug(
+      this.logger.info(
         'MOJO_EXTENSION_FORCE_MAGIC is set; using release SDK spec(s)',
         releaseSDKSpecs,
       );
@@ -485,7 +485,7 @@ export class MAXSDKManager extends DisposableContext {
     const spec = await findMagicSDKSpec(
       this.extensionContext,
       this.logger,
-      this.isNightly,
+      true,
     );
     return spec ? [spec] : [];
   }
