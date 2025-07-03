@@ -161,7 +161,7 @@ async function getAllNightlyMAXVersions(
     return undefined;
   }
   const jsonContents = JSON.parse(contents);
-  const packages = jsonContents["packages.conda"];
+  const packages = jsonContents['packages.conda'];
   const versions: string[] = [];
   for (const packageName in packages) {
     if (packageName.startsWith('max-')) {
@@ -177,7 +177,7 @@ async function getLatestNightlyMAXVersion(
   privateDir: string,
 ): Promise<Optional<string>> {
   const versions = await getAllNightlyMAXVersions(logger, privateDir);
-  logger.info("versions", versions);
+  logger.info('versions', versions);
   if (versions === undefined) {
     return undefined;
   }
