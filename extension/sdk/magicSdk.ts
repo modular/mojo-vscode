@@ -152,14 +152,12 @@ async function getAllNightlyMAXVersions(
         logger,
       ))
     ) {
-      logger.error("unable to download file")
       return undefined;
     }
     logger.info('Successfully downloaded');
   }
   contents = await readFile(repodataFile);
   if (!contents) {
-    logger.error("unable to read file");
     return undefined;
   }
   const jsonContents = JSON.parse(contents);
@@ -171,7 +169,6 @@ async function getAllNightlyMAXVersions(
     }
   }
   versions.sort(compareNightlyMAXVersions);
-  logger.info("contents", contents);
   return versions.length === 0 ? undefined : versions;
 }
 
@@ -205,7 +202,6 @@ async function findVersionToDownload(
   };
 
   if (extVersion === '0.0.0') {
-    logger.info("using latest nightly max");
     // If this is a dev version of the extension, we can figure out dynamically
     // what's the latest version of the sdk.
     return nightlyMaxVersionToComponents(
