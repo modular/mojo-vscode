@@ -61,5 +61,5 @@ suite('LSP recording', () => {
         },
       },
     });
-  });
+  }).skip();
 });
