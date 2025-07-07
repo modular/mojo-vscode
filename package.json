@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "publisher": "modular-mojotools",
   "icon": "icon.png",
-  "type": "module",
+  "type": "commonjs",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -26,14 +26,15 @@
   ],
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "tsc --noEmit -p ./ && tsc --noEmit -p ./lsp-proxy && node esbuild.js",
-    "build": "node esbuild.js",
+    "vscode:prepublish": "npm run typecheck && npm run bundle",
+    "typecheck": "tsc --noEmit -p ./ && tsc --noEmit -p ./lsp-proxy",
+    "bundle": "node esbuild.js",
+    "build": "tsc -b ./ && tsc -b ./lsp-proxy",
     "package": "vsce package --out ./out/vscode-mojo.vsix",
     "ci": "npm ci && cd ./lsp-proxy && npm ci",
     "format": "npx prettier . --write --ignore-path .gitignore",
     "publish": "vsce publish",
-    "test": "npm run vscode:prepublish && vscode-test --label dev",
-    "ci-test": "npm run vscode:prepublish && vscode-test --label ci"
+    "test": "npm run build && vscode-test"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
