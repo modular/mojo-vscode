@@ -80,7 +80,8 @@ export class MojoLSPManager extends DisposableContext {
     );
 
     if (
-      this.extensionContext.extensionMode == vscode.ExtensionMode.Development || this.extensionContext.extensionMode == vscode.ExtensionMode.Test
+      this.extensionContext.extensionMode == vscode.ExtensionMode.Development ||
+      this.extensionContext.extensionMode == vscode.ExtensionMode.Test
     ) {
       this.pushSubscription(
         vscode.commands.registerCommand('mojo.lsp.debug', async () => {
