@@ -177,7 +177,6 @@ async function getLatestNightlyMAXVersion(
   privateDir: string,
 ): Promise<Optional<string>> {
   const versions = await getAllNightlyMAXVersions(logger, privateDir);
-  logger.info('versions', versions);
   if (versions === undefined) {
     return undefined;
   }
