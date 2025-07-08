@@ -28,7 +28,7 @@
   "scripts": {
     "vscode:prepublish": "npm run typecheck && npm run bundle",
     "typecheck": "tsc --noEmit -p ./ && tsc --noEmit -p ./lsp-proxy",
-    "bundle": "node esbuild.js",
+    "bundle": "node esbuild.mjs",
     "build": "tsc -b ./ && tsc -b ./lsp-proxy",
     "package": "vsce package --out ./out/vscode-mojo.vsix",
     "ci": "npm ci && cd ./lsp-proxy && npm ci",
