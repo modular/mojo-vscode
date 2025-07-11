@@ -7,7 +7,6 @@
 import * as vscode from 'vscode';
 
 import { Logger } from './logging';
-import { MAXSDKManager } from './sdk/sdkManager';
 import { MojoLSPManager } from './lsp/lsp';
 import * as configWatcher from './utils/configWatcher';
 import { DisposableContext } from './utils/disposableContext';
@@ -18,6 +17,7 @@ import { MojoDecoratorManager } from './decorations';
 import { RpcServer } from './server/RpcServer';
 import { Mutex } from 'async-mutex';
 import { TelemetryReporter } from './telemetry';
+import { PythonEnvironmentManager } from './pyenv';
 
 /**
  * Returns if the given extension context is a nightly build.
@@ -35,6 +35,7 @@ export class MojoExtension extends DisposableContext {
   public readonly extensionContext: vscode.ExtensionContext;
   public lspManager?: MojoLSPManager;
   public readonly isNightly: boolean;
+  public pyenvManager?: PythonEnvironmentManager;
   private activateMutex = new Mutex();
   private reporter: TelemetryReporter;
 
@@ -77,12 +78,9 @@ Activating the Mojo Extension
 =============================
 `);
 
-      const sdkManager = new MAXSDKManager(
-        this.logger,
-        this.isNightly,
-        this.extensionContext,
-      );
-      this.pushSubscription(sdkManager);
+      this.pyenvManager = new PythonEnvironmentManager(this.logger);
+      this.pushSubscription(this.pyenvManager);
+      await this.pyenvManager.init();
 
       this.pushSubscription(
         await configWatcher.activate({
@@ -98,14 +96,14 @@ Activating the Mojo Extension
       );
 
       // Initialize the formatter.
-      this.pushSubscription(registerFormatter(sdkManager));
+      this.pushSubscription(registerFormatter(this.pyenvManager, this.logger));
 
       // Initialize the debugger support.
-      this.pushSubscription(new MojoDebugManager(this, sdkManager));
+      this.pushSubscription(new MojoDebugManager(this, this.pyenvManager));
 
       // Initialize the execution commands.
       this.pushSubscription(
-        activateRunCommands(sdkManager, this.extensionContext),
+        activateRunCommands(this.pyenvManager, this.extensionContext),
       );
 
       // Initialize the decorations.
@@ -113,8 +111,9 @@ Activating the Mojo Extension
 
       // Initialize the LSPs
       this.lspManager = new MojoLSPManager(
-        sdkManager,
+        this.pyenvManager,
         this.extensionContext,
+        this.logger,
         this.reporter,
       );
       await this.lspManager.activate();

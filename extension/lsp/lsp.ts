@@ -9,15 +9,14 @@ import * as vscode from 'vscode';
 import * as vscodelc from 'vscode-languageclient/node';
 import { TransportKind } from 'vscode-languageclient/node';
 
-import { MAXSDK } from '../sdk/sdk';
 import * as config from '../utils/config';
 import { DisposableContext } from '../utils/disposableContext';
 import { Subject } from 'rxjs';
 import { Logger } from '../logging';
-import { MAXSDKManager } from '../sdk/sdkManager';
 import { TelemetryReporter } from '../telemetry';
 import { LSPRecorder } from './recorder';
 import { Optional } from '../types';
+import { PythonEnvironmentManager, SDK } from '../pyenv';
 
 /**
  * This type represents the initialization options send by the extension to the
@@ -42,8 +41,8 @@ export interface InitializationOptions {
  *  This class manages the LSP clients.
  */
 export class MojoLSPManager extends DisposableContext {
-  private sdkManager: MAXSDKManager;
   private extensionContext: vscode.ExtensionContext;
+  private pyenvManager: PythonEnvironmentManager;
   public lspClient: Optional<vscodelc.LanguageClient>;
   public lspClientChanges = new Subject<Optional<vscodelc.LanguageClient>>();
   private logger: Logger;
@@ -53,15 +52,16 @@ export class MojoLSPManager extends DisposableContext {
   private attachDebugger: boolean = false;
 
   constructor(
-    sdkManager: MAXSDKManager,
+    pyenvManager: PythonEnvironmentManager,
     extensionContext: vscode.ExtensionContext,
+    logger: Logger,
     reporter: TelemetryReporter,
   ) {
     super();
 
-    this.sdkManager = sdkManager;
+    this.pyenvManager = pyenvManager;
     this.extensionContext = extensionContext;
-    this.logger = sdkManager.logger;
+    this.logger = logger;
     this.reporter = reporter;
   }
 
@@ -188,8 +188,9 @@ export class MojoLSPManager extends DisposableContext {
         this.tryStartLanguageClient(doc),
       ),
     );
-    this.pushRxjsSubscription(
-      this.sdkManager.onActiveSDKChanged.subscribe(() => {
+
+    this.pushSubscription(
+      this.pyenvManager.onEnvironmentChange(() => {
         vscode.commands.executeCommand('mojo.lsp.restart');
       }),
     );
@@ -200,7 +201,7 @@ export class MojoLSPManager extends DisposableContext {
       return;
     }
 
-    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ true);
+    const sdk = await this.pyenvManager.getSDKInfo();
 
     if (!sdk) {
       return;
@@ -232,7 +233,7 @@ export class MojoLSPManager extends DisposableContext {
    * Create a new language server.
    */
   activateLanguageClient(
-    sdk: MAXSDK,
+    sdk: SDK,
     includeDirs: string[],
   ): vscodelc.LanguageClient {
     this.logger.lsp.info('Activating language client');
@@ -249,8 +250,10 @@ export class MojoLSPManager extends DisposableContext {
 
     const initializationOptions: InitializationOptions = {
       serverArgs: serverArgs,
-      serverEnv: sdk.getProcessEnv(),
-      serverPath: sdk.config.mojoLanguageServerPath,
+      serverEnv: {
+        MODULAR_HOME: sdk.homePath,
+      },
+      serverPath: sdk.lspPath,
     };
 
     const module = this.extensionContext.asAbsolutePath(
@@ -326,8 +329,7 @@ export class MojoLSPManager extends DisposableContext {
     this.pushSubscription(
       languageClient.onNotification('mojo/lspRestart', () => {
         this.reporter.sendTelemetryEvent('lspRestart', {
-          mojoSDKVersion: sdk.config.version.toString(),
-          mojoSDKKind: sdk.kind,
+          mojoSDKVersion: sdk.version,
         });
       }),
     );

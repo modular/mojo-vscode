@@ -7,10 +7,14 @@
 import { execFile } from 'child_process';
 import * as vscode from 'vscode';
 
-import { MAXSDKManager } from './sdk/sdkManager';
 import { get } from './utils/config';
+import { PythonEnvironmentManager } from './pyenv';
+import { Logger } from './logging';
 
-export function registerFormatter(maxSDKManager: MAXSDKManager) {
+export function registerFormatter(
+  envManager: PythonEnvironmentManager,
+  logger: Logger,
+) {
   return vscode.languages.registerDocumentFormattingEditProvider('mojo', {
     async provideDocumentFormattingEdits(document, _options) {
       const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -18,27 +22,24 @@ export function registerFormatter(maxSDKManager: MAXSDKManager) {
       const cwd = workspaceFolder?.uri?.fsPath || backupFolder?.uri.fsPath;
       const args = get<string[]>('formatting.args', workspaceFolder, []);
 
-      // We use 'hideRepeatedErrors' because this action is often automated.
-      const sdk = await maxSDKManager.findSDK(/*hideRepeatedErrors=*/ true);
+      const sdk = await envManager.getSDKInfo();
 
       if (!sdk) {
         return [];
       }
 
-      const env = sdk.getProcessEnv();
-
       return new Promise<vscode.TextEdit[]>(function (resolve, reject) {
         const originalDocumentText = document.getText();
         const process = execFile(
-          sdk.config.mojoMBlackPath,
+          sdk.mblackPath,
           ['--fast', '--preview', '--quiet', '-t', 'mojo', ...args, '-'],
-          { cwd, env },
+          { cwd, env: sdk.getProcessEnv() },
           (error, stdout, stderr) => {
             // Process any errors/warnings during formatting. These aren't all
             // necessarily fatal, so this doesn't prevent edits from being
             // applied.
             if (error) {
-              maxSDKManager.logger.error(`Formatting error:\n${stderr}`);
+              logger.error(`Formatting error:\n${stderr}`);
               reject(error);
               return;
             }

@@ -9,11 +9,10 @@ import * as vscode from 'vscode';
 import { DisposableContext } from '../utils/disposableContext';
 import * as path from 'path';
 import * as config from '../utils/config';
-import { MAXSDK } from '../sdk/sdk';
-import { MAXSDKManager } from '../sdk/sdkManager';
 import { MojoDebugConfiguration } from '../debug/debug';
 import md5 from 'md5';
 import { Optional } from '../types';
+import { PythonEnvironmentManager, SDK } from '../pyenv';
 
 type FileArgs = {
   runArgs: string[];
@@ -24,13 +23,16 @@ type FileArgs = {
  * This class provides a manager for executing and debugging mojo files.
  */
 class ExecutionManager extends DisposableContext {
-  readonly sdkManager: MAXSDKManager;
+  readonly envManager: PythonEnvironmentManager;
   private context: vscode.ExtensionContext;
 
-  constructor(sdkManager: MAXSDKManager, context: vscode.ExtensionContext) {
+  constructor(
+    sdkManager: PythonEnvironmentManager,
+    context: vscode.ExtensionContext,
+  ) {
     super();
 
-    this.sdkManager = sdkManager;
+    this.envManager = sdkManager;
     this.context = context;
     this.activateRunCommands();
   }
@@ -150,7 +152,7 @@ class ExecutionManager extends DisposableContext {
     }
 
     // Find the config for processing this file.
-    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
+    const sdk = await this.envManager.getSDKInfo();
 
     if (!sdk) {
       return;
@@ -161,7 +163,7 @@ class ExecutionManager extends DisposableContext {
     terminal.show();
     terminal.sendText(
       quote([
-        sdk.config.mojoDriverPath,
+        sdk.mojoPath,
         'run',
         ...this.getBuildArgs(doc.fileName),
         doc.fileName,
@@ -212,8 +214,8 @@ class ExecutionManager extends DisposableContext {
   /**
    * Get a terminal to use for the given file.
    */
-  getTerminalForFile(doc: vscode.TextDocument, sdk: MAXSDK): vscode.Terminal {
-    const fullId = `${doc.fileName} · ${sdk.config.modularHomePath}`;
+  getTerminalForFile(doc: vscode.TextDocument, sdk: SDK): vscode.Terminal {
+    const fullId = `${doc.fileName} · ${sdk.homePath}`;
     // We have to keep the full terminal name short so that VS Code renders it nicely,
     // and we have to keep it unique among other files.
     const terminalName = `Mojo: ${path.basename(doc.fileName)} · ${md5(fullId).substring(0, 5)}`;
@@ -285,8 +287,8 @@ class ExecutionManager extends DisposableContext {
  *     commands.
  */
 export function activateRunCommands(
-  sdkManager: MAXSDKManager,
+  envManager: PythonEnvironmentManager,
   context: vscode.ExtensionContext,
 ): vscode.Disposable {
-  return new ExecutionManager(sdkManager, context);
+  return new ExecutionManager(envManager, context);
 }
