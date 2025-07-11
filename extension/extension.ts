@@ -78,7 +78,10 @@ Activating the Mojo Extension
 =============================
 `);
 
-      this.pyenvManager = new PythonEnvironmentManager(this.logger);
+      this.pyenvManager = new PythonEnvironmentManager(
+        this.logger,
+        this.reporter,
+      );
       this.pushSubscription(this.pyenvManager);
       await this.pyenvManager.init();
 

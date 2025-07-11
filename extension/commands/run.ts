@@ -152,7 +152,7 @@ class ExecutionManager extends DisposableContext {
     }
 
     // Find the config for processing this file.
-    const sdk = await this.envManager.getSDKInfo();
+    const sdk = await this.envManager.getActiveSDK();
 
     if (!sdk) {
       return;

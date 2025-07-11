@@ -22,7 +22,7 @@ export function registerFormatter(
       const cwd = workspaceFolder?.uri?.fsPath || backupFolder?.uri.fsPath;
       const args = get<string[]>('formatting.args', workspaceFolder, []);
 
-      const sdk = await envManager.getSDKInfo();
+      const sdk = await envManager.getActiveSDK();
 
       if (!sdk) {
         return [];

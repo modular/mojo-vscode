@@ -13,6 +13,8 @@ import { Logger } from './logging';
 import path from 'path';
 import * as util from 'util';
 import { execFile as callbackExecFile } from 'child_process';
+import { Memoize } from 'typescript-memoize';
+import { TelemetryReporter } from './telemetry';
 const execFile = util.promisify(callbackExecFile);
 
 export enum SDKKind {
@@ -45,6 +47,8 @@ export class SDK {
     readonly lldbPath: string,
   ) {}
 
+  @Memoize()
+  /// Checks if the version of LLDB shipped with this SDK supports Python scripting.
   public async lldbHasPythonScriptingSupport(): Promise<boolean> {
     try {
       let { stdout, stderr } = await execFile(this.lldbPath, [
@@ -74,6 +78,7 @@ export class SDK {
     return false;
   }
 
+  /// Gets an appropriate environment to spawn subprocesses from this SDK.
   public getProcessEnv(withTelemetry: boolean = true) {
     return {
       MODULAR_HOME: this.homePath,
@@ -85,12 +90,14 @@ export class SDK {
 export class PythonEnvironmentManager extends DisposableContext {
   private api: PythonExtension | undefined = undefined;
   private logger: Logger;
+  private reporter: TelemetryReporter;
   public onEnvironmentChange: vscode.Event<void>;
   private envChangeEmitter: vscode.EventEmitter<void>;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, reporter: TelemetryReporter) {
     super();
     this.logger = logger;
+    this.reporter = reporter;
     this.envChangeEmitter = new vscode.EventEmitter();
     this.onEnvironmentChange = this.envChangeEmitter.event;
   }
@@ -98,13 +105,14 @@ export class PythonEnvironmentManager extends DisposableContext {
   public async init() {
     this.api = await PythonExtension.api();
     this.pushSubscription(
-      this.api.environments.onDidChangeActiveEnvironmentPath(
-        (_) => this.envChangeEmitter.fire,
+      this.api.environments.onDidChangeActiveEnvironmentPath((_) =>
+        this.envChangeEmitter.fire(),
       ),
     );
   }
 
-  async getSDKInfo(): Promise<SDK | undefined> {
+  /// Retrieves the active SDK from the currently active Python virtual environment, or undefined if one is not present.
+  async getActiveSDK(): Promise<SDK | undefined> {
     assert(this.api !== undefined);
     const envPath = this.api.environments.getActiveEnvironmentPath();
     const env = await this.api.environments.resolveEnvironment(envPath);
@@ -134,6 +142,10 @@ export class PythonEnvironmentManager extends DisposableContext {
       const contents = decoder.decode(bytes);
       const config = ini.parse(contents);
       this.logger.info(`Found SDK with version ${config.max.version}`);
+
+      this.reporter.sendTelemetryEvent('sdkLoaded', {
+        version: config.max.version,
+      });
 
       return new SDK(
         this.logger,

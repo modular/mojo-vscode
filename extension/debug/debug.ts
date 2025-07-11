@@ -81,7 +81,7 @@ async function findSDKForDebugConfiguration(
   if (config.modularHomePath !== undefined) {
     return envManager.createSDKFromHomePath(config.modularHomePath);
   }
-  return envManager.getSDKInfo();
+  return envManager.getActiveSDK();
 }
 /**
  * This class defines a factory used to find the lldb-vscode binary to use

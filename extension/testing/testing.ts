@@ -267,7 +267,7 @@ export class MojoTestManager extends DisposableContext {
     };
 
     // Grab the sdk for the execution context.
-    const sdk = await this.envManager.getSDKInfo();
+    const sdk = await this.envManager.getActiveSDK();
     if (!sdk) {
       this.controller.items.delete(test.uri!.fsPath);
       return;
@@ -391,7 +391,7 @@ export class MojoTestManager extends DisposableContext {
 
     // Invoke the mojo tool to discover tests in the document.
     // We use 'hideRepeatedErrors' because this action is automated.
-    const sdk = await this.envManager.getSDKInfo();
+    const sdk = await this.envManager.getActiveSDK();
     if (!sdk) {
       this.controller.items.delete(document.uri.fsPath);
       this.logger.debug(`No SDK present, clearing tests for ${document.uri}`);
