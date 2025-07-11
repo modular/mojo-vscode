@@ -16,7 +16,7 @@ import { quote } from 'shell-quote';
 import * as util from 'util';
 import { execFile as execFileBase } from 'child_process';
 import { Optional } from '../types';
-import { PythonEnvironmentManager, SDK } from '../pyenv';
+import { PythonEnvironmentManager, SDK, SDKKind } from '../pyenv';
 import { Logger } from '../logging';
 const execFile = util.promisify(execFileBase);
 
@@ -79,7 +79,10 @@ async function findSDKForDebugConfiguration(
   envManager: PythonEnvironmentManager,
 ): Promise<Optional<SDK>> {
   if (config.modularHomePath !== undefined) {
-    return envManager.createSDKFromHomePath(config.modularHomePath);
+    return envManager.createSDKFromHomePath(
+      SDKKind.Custom,
+      config.modularHomePath,
+    );
   }
   return envManager.getActiveSDK();
 }

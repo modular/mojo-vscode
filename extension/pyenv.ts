@@ -19,6 +19,7 @@ const execFile = util.promisify(callbackExecFile);
 
 export enum SDKKind {
   Environment = 'environment',
+  Custom = 'custom',
 }
 
 /// Represents a usable instance of the MAX SDK.
@@ -129,10 +130,14 @@ export class PythonEnvironmentManager extends DisposableContext {
     this.logger.info('Found Python environment');
 
     const homePath = path.join(env.executable.sysPrefix, 'share', 'max');
-    return this.createSDKFromHomePath(homePath);
+    return this.createSDKFromHomePath(SDKKind.Environment, homePath);
   }
 
-  async createSDKFromHomePath(homePath: string): Promise<SDK | undefined> {
+  /// Attempts to create a SDK from a home path. Returns undefined if creation failed.
+  async createSDKFromHomePath(
+    kind: SDKKind,
+    homePath: string,
+  ): Promise<SDK | undefined> {
     const modularCfgPath = path.join(homePath, 'modular.cfg');
     try {
       const decoder = new TextDecoder();
@@ -145,11 +150,12 @@ export class PythonEnvironmentManager extends DisposableContext {
 
       this.reporter.sendTelemetryEvent('sdkLoaded', {
         version: config.max.version,
+        kind,
       });
 
       return new SDK(
         this.logger,
-        SDKKind.Environment,
+        kind,
         config.max.version,
         homePath,
         config['mojo-max']['lsp_server_path'],
