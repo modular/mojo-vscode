@@ -42,7 +42,7 @@ export interface InitializationOptions {
  */
 export class MojoLSPManager extends DisposableContext {
   private extensionContext: vscode.ExtensionContext;
-  private pyenvManager: PythonEnvironmentManager;
+  private envManager: PythonEnvironmentManager;
   public lspClient: Optional<vscodelc.LanguageClient>;
   public lspClientChanges = new Subject<Optional<vscodelc.LanguageClient>>();
   private logger: Logger;
@@ -52,14 +52,14 @@ export class MojoLSPManager extends DisposableContext {
   private attachDebugger: boolean = false;
 
   constructor(
-    pyenvManager: PythonEnvironmentManager,
+    envManager: PythonEnvironmentManager,
     extensionContext: vscode.ExtensionContext,
     logger: Logger,
     reporter: TelemetryReporter,
   ) {
     super();
 
-    this.pyenvManager = pyenvManager;
+    this.envManager = envManager;
     this.extensionContext = extensionContext;
     this.logger = logger;
     this.reporter = reporter;
@@ -190,7 +190,7 @@ export class MojoLSPManager extends DisposableContext {
     );
 
     this.pushSubscription(
-      this.pyenvManager.onEnvironmentChange(() => {
+      this.envManager.onEnvironmentChange(() => {
         vscode.commands.executeCommand('mojo.lsp.restart');
       }),
     );
@@ -201,10 +201,10 @@ export class MojoLSPManager extends DisposableContext {
       return;
     }
 
-    const sdk = await this.pyenvManager.getActiveSDK();
+    const sdk = await this.envManager.getActiveSDK();
 
     if (!sdk) {
-      await this.pyenvManager.showInstallWarning();
+      await this.envManager.showInstallWarning();
       return;
     }
 
@@ -251,9 +251,7 @@ export class MojoLSPManager extends DisposableContext {
 
     const initializationOptions: InitializationOptions = {
       serverArgs: serverArgs,
-      serverEnv: {
-        MODULAR_HOME: sdk.homePath,
-      },
+      serverEnv: sdk.getProcessEnv(),
       serverPath: sdk.lspPath,
     };
 
@@ -331,6 +329,7 @@ export class MojoLSPManager extends DisposableContext {
       languageClient.onNotification('mojo/lspRestart', () => {
         this.reporter.sendTelemetryEvent('lspRestart', {
           mojoSDKVersion: sdk.version,
+          mojoSDKKind: sdk.kind,
         });
       }),
     );
