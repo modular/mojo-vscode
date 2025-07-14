@@ -112,8 +112,15 @@ export class PythonEnvironmentManager extends DisposableContext {
     );
   }
 
+  /// Inform the user that they need to install the MAX SDK.
+  public async showInstallWarning() {
+    await vscode.window.showErrorMessage(
+      'The MAX SDK is not installed in your current Python environment. Please install the MAX SDK or select a Python environment with MAX installed.',
+    );
+  }
+
   /// Retrieves the active SDK from the currently active Python virtual environment, or undefined if one is not present.
-  async getActiveSDK(): Promise<SDK | undefined> {
+  public async getActiveSDK(): Promise<SDK | undefined> {
     assert(this.api !== undefined);
     const envPath = this.api.environments.getActiveEnvironmentPath();
     const env = await this.api.environments.resolveEnvironment(envPath);
@@ -127,14 +134,14 @@ export class PythonEnvironmentManager extends DisposableContext {
       return undefined;
     }
 
-    this.logger.info('Found Python environment');
+    this.logger.info(`Found Python environment at ${envPath.path}`);
 
     const homePath = path.join(env.executable.sysPrefix, 'share', 'max');
     return this.createSDKFromHomePath(SDKKind.Environment, homePath);
   }
 
   /// Attempts to create a SDK from a home path. Returns undefined if creation failed.
-  async createSDKFromHomePath(
+  public async createSDKFromHomePath(
     kind: SDKKind,
     homePath: string,
   ): Promise<SDK | undefined> {
@@ -163,10 +170,11 @@ export class PythonEnvironmentManager extends DisposableContext {
         config['mojo-max']['lldb_plugin_path'],
         config['mojo-max']['lldb_vscode_path'],
         config['mojo-max']['driver_path'],
-        config['mojo_max']['lldb_visualizers_path'],
+        config['mojo-max']['lldb_visualizers_path'],
         config['mojo-max']['lldb_path'],
       );
-    } catch {
+    } catch (e) {
+      this.logger.error('Error loading SDK', e);
       return undefined;
     }
   }

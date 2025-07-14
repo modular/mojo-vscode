@@ -204,6 +204,7 @@ export class MojoLSPManager extends DisposableContext {
     const sdk = await this.pyenvManager.getActiveSDK();
 
     if (!sdk) {
+      await this.pyenvManager.showInstallWarning();
       return;
     }
 
