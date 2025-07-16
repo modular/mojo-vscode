@@ -20,6 +20,7 @@ const execFile = util.promisify(callbackExecFile);
 export enum SDKKind {
   Environment = 'environment',
   Custom = 'custom',
+  Internal = 'internal',
 }
 
 /// Represents a usable instance of the MAX SDK.
@@ -122,6 +123,13 @@ export class PythonEnvironmentManager extends DisposableContext {
   /// Retrieves the active SDK from the currently active Python virtual environment, or undefined if one is not present.
   public async getActiveSDK(): Promise<SDK | undefined> {
     assert(this.api !== undefined);
+    // If a single workspace folder is open, try to retrieve a Modular-internal monorepo SDK from it.
+    const monorepoSDK = await this.getMonorepoSDK();
+
+    if (monorepoSDK) {
+      return monorepoSDK;
+    }
+
     const envPath = this.api.environments.getActiveEnvironmentPath();
     const env = await this.api.environments.resolveEnvironment(envPath);
     this.logger.info('Loading MAX SDK information from Python venv');
@@ -153,7 +161,8 @@ export class PythonEnvironmentManager extends DisposableContext {
       );
       const contents = decoder.decode(bytes);
       const config = ini.parse(contents);
-      this.logger.info(`Found SDK with version ${config.max.version}`);
+      const version = 'version' in config.max ? config.max.version : '0.0.0';
+      this.logger.info(`Found SDK with version ${version}`);
 
       this.reporter.sendTelemetryEvent('sdkLoaded', {
         version: config.max.version,
@@ -163,7 +172,7 @@ export class PythonEnvironmentManager extends DisposableContext {
       return new SDK(
         this.logger,
         kind,
-        config.max.version,
+        version,
         homePath,
         config['mojo-max']['lsp_server_path'],
         config['mojo-max']['mblack_path'],
@@ -175,6 +184,29 @@ export class PythonEnvironmentManager extends DisposableContext {
       );
     } catch (e) {
       this.logger.error('Error loading SDK', e);
+      return undefined;
+    }
+  }
+
+  private async getMonorepoSDK(): Promise<SDK | undefined> {
+    if (!vscode.workspace.workspaceFolders) {
+      return;
+    }
+
+    if (vscode.workspace.workspaceFolders.length !== 1) {
+      return;
+    }
+
+    const folder = vscode.Uri.joinPath(
+      vscode.workspace.workspaceFolders[0].uri,
+      '.derived',
+    );
+    try {
+      const info = await vscode.workspace.fs.stat(folder);
+      if (info.type & vscode.FileType.Directory) {
+        return this.createSDKFromHomePath(SDKKind.Internal, folder.fsPath);
+      }
+    } catch {
       return undefined;
     }
   }

@@ -4,7 +4,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-import * as path from 'path';
 import * as vscode from 'vscode';
 import * as vscodelc from 'vscode-languageclient/node';
 import { TransportKind } from 'vscode-languageclient/node';
@@ -255,9 +254,7 @@ export class MojoLSPManager extends DisposableContext {
       serverPath: sdk.lspPath,
     };
 
-    const module = this.extensionContext.asAbsolutePath(
-      path.join('out', 'proxy.js'),
-    );
+    const module = this.extensionContext.asAbsolutePath('out/proxy.js');
     const serverOptions: vscodelc.ServerOptions = {
       run: { module, transport: TransportKind.ipc },
       debug: { module, transport: TransportKind.ipc },
