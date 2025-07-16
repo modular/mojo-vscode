@@ -16,6 +16,7 @@ import { TelemetryReporter } from '../telemetry';
 import { LSPRecorder } from './recorder';
 import { Optional } from '../types';
 import { PythonEnvironmentManager, SDK } from '../pyenv';
+import path from 'path';
 
 /**
  * This type represents the initialization options send by the extension to the
@@ -254,7 +255,9 @@ export class MojoLSPManager extends DisposableContext {
       serverPath: sdk.lspPath,
     };
 
-    const module = this.extensionContext.asAbsolutePath('out/proxy.js');
+    const module = this.extensionContext.asAbsolutePath(
+      path.join('out', 'proxy.js'),
+    );
     const serverOptions: vscodelc.ServerOptions = {
       run: { module, transport: TransportKind.ipc },
       debug: { module, transport: TransportKind.ipc },

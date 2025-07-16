@@ -123,8 +123,8 @@ export class PythonEnvironmentManager extends DisposableContext {
   /// Retrieves the active SDK from the currently active Python virtual environment, or undefined if one is not present.
   public async getActiveSDK(): Promise<SDK | undefined> {
     assert(this.api !== undefined);
-    // If a single workspace folder is open, try to retrieve a Modular-internal monorepo SDK from it.
-    const monorepoSDK = await this.getMonorepoSDK();
+    // Prioritize retrieving a monorepo SDK over querying the environment.
+    const monorepoSDK = await this.tryGetMonorepoSDK();
 
     if (monorepoSDK) {
       return monorepoSDK;
@@ -165,7 +165,7 @@ export class PythonEnvironmentManager extends DisposableContext {
       this.logger.info(`Found SDK with version ${version}`);
 
       this.reporter.sendTelemetryEvent('sdkLoaded', {
-        version: config.max.version,
+        version,
         kind,
       });
 
@@ -188,7 +188,9 @@ export class PythonEnvironmentManager extends DisposableContext {
     }
   }
 
-  private async getMonorepoSDK(): Promise<SDK | undefined> {
+  /// Attempt to load a monorepo SDK from the currently open workspace folder.
+  /// Resolves with the loaded SDK, or undefined if one doesn't exist.
+  private async tryGetMonorepoSDK(): Promise<SDK | undefined> {
     if (!vscode.workspace.workspaceFolders) {
       return;
     }
