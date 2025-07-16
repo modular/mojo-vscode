@@ -4,7 +4,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-import * as path from 'path';
 import * as vscode from 'vscode';
 import * as vscodelc from 'vscode-languageclient/node';
 import { TransportKind } from 'vscode-languageclient/node';
@@ -17,6 +16,7 @@ import { TelemetryReporter } from '../telemetry';
 import { LSPRecorder } from './recorder';
 import { Optional } from '../types';
 import { PythonEnvironmentManager, SDK } from '../pyenv';
+import path from 'path';
 
 /**
  * This type represents the initialization options send by the extension to the
