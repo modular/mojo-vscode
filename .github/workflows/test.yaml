@@ -31,7 +31,7 @@ jobs:
         uses: prefix-dev/setup-pixi@273e4808c831936a3ce1a3080c829d9e153143d3
         with:
           pixi-version: v0.49.0
-          run_install: false
+          run-install: false
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
