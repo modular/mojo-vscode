@@ -11,13 +11,13 @@ import { DisposableContext } from '../utils/disposableContext';
 import { getAllOpenMojoFiles, WorkspaceAwareFile } from '../utils/files';
 import { activatePickProcessToAttachCommand } from './attachQuickPick';
 import { initializeInlineLocalVariablesProvider } from './inlineVariables';
-import { MAXSDK } from '../sdk/sdk';
 import { MojoExtension } from '../extension';
-import { MAXSDKManager } from '../sdk/sdkManager';
 import { quote } from 'shell-quote';
 import * as util from 'util';
 import { execFile as execFileBase } from 'child_process';
 import { Optional } from '../types';
+import { PythonEnvironmentManager, SDK, SDKKind } from '../pyenv';
+import { Logger } from '../logging';
 const execFile = util.promisify(execFileBase);
 
 /**
@@ -76,12 +76,15 @@ const DEBUG_TYPE: string = 'mojo-lldb';
  */
 async function findSDKForDebugConfiguration(
   config: MojoDebugConfiguration,
-  sdkManager: MAXSDKManager,
-): Promise<Optional<MAXSDK>> {
+  envManager: PythonEnvironmentManager,
+): Promise<Optional<SDK>> {
   if (config.modularHomePath !== undefined) {
-    return sdkManager.createAdHocSDKAndShowError(config.modularHomePath);
+    return envManager.createSDKFromHomePath(
+      SDKKind.Custom,
+      config.modularHomePath,
+    );
   }
-  return sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
+  return envManager.getActiveSDK();
 }
 /**
  * This class defines a factory used to find the lldb-vscode binary to use
@@ -90,10 +93,12 @@ async function findSDKForDebugConfiguration(
 class MojoDebugAdapterDescriptorFactory
   implements vscode.DebugAdapterDescriptorFactory
 {
-  private sdkManager: MAXSDKManager;
+  private envManager: PythonEnvironmentManager;
+  private logger: Logger;
 
-  constructor(sdkManager: MAXSDKManager) {
-    this.sdkManager = sdkManager;
+  constructor(envManager: PythonEnvironmentManager, logger: Logger) {
+    this.envManager = envManager;
+    this.logger = logger;
   }
 
   async createDebugAdapterDescriptor(
@@ -102,54 +107,47 @@ class MojoDebugAdapterDescriptorFactory
   ): Promise<Optional<vscode.DebugAdapterDescriptor>> {
     const sdk = await findSDKForDebugConfiguration(
       session.configuration,
-      this.sdkManager,
+      this.envManager,
     );
 
     // We don't need to show error messages here because
     // `findSDKConfigForDebugSession` does that.
     if (!sdk) {
-      this.sdkManager.logger.error(
-        "Couldn't find an SDK for the debug session",
-      );
+      this.logger.error("Couldn't find an SDK for the debug session");
       return undefined;
     }
-    this.sdkManager.logger.info(
-      `Using the SDK ${sdk.config.version.toString()} for the debug session`,
-    );
-    if (sdk.config.modularHomePath.endsWith('.derived')) {
+    this.logger.info(`Using the SDK ${sdk.version} for the debug session`);
+    if (sdk.homePath.endsWith('.derived')) {
       // Debug adapters from dev sdks tend to be corrupted because dependencies
       // might need to be rebuilt, so we run a simple verification.
       try {
-        await execFile(sdk.config.mojoLLDBVSCodePath, ['--help']);
+        await execFile(sdk.dapPath, ['--help']);
       } catch (ex: any) {
         const { stderr, stdout } = ex;
-        this.sdkManager.logger.main.outputChannel.appendLine(
+        this.logger.main.outputChannel.appendLine(
           '\n\n\n===== LLDB Debug Adapter verification =====',
         );
-        this.sdkManager.logger.error(
-          'Unable to execute the LLDB Debug Adapter.',
-          ex,
-        );
+        this.logger.error('Unable to execute the LLDB Debug Adapter.', ex);
         if (stdout) {
-          this.sdkManager.logger.info('stdout: ' + stdout);
+          this.logger.info('stdout: ' + stdout);
         }
         if (stderr) {
-          this.sdkManager.logger.info('stderr: ' + stderr);
+          this.logger.info('stderr: ' + stderr);
         }
-        this.sdkManager.logger.main.outputChannel.show();
+        this.logger.main.outputChannel.show();
 
-        this.sdkManager.showBazelwRunInstallPrompt(
-          'The LLDB Debug Adapter seems to be corrupted.',
-          sdk.config.modularHomePath,
-        );
+        // this.envManager.showBazelwRunInstallPrompt(
+        //   'The LLDB Debug Adapter seems to be corrupted.',
+        //   sdk.homePath,
+        // );
       }
     }
 
-    return new vscode.DebugAdapterExecutable(sdk.config.mojoLLDBVSCodePath, [
+    return new vscode.DebugAdapterExecutable(sdk.dapPath, [
       '--repl-mode',
       'variable',
       '--pre-init-command',
-      `?!plugin load '${sdk.config.mojoLLDBPluginPath}'`,
+      `?!plugin load '${sdk.lldbPluginPath}'`,
     ]);
   }
 }
@@ -178,10 +176,12 @@ class MojoCudaGdbDebugAdapterDescriptorFactory
 class MojoDebugConfigurationResolver
   implements vscode.DebugConfigurationProvider
 {
-  private sdkManager: MAXSDKManager;
+  private envManager: PythonEnvironmentManager;
+  private logger: Logger;
 
-  constructor(sdkManager: MAXSDKManager) {
-    this.sdkManager = sdkManager;
+  constructor(envManager: PythonEnvironmentManager, logger: Logger) {
+    this.envManager = envManager;
+    this.logger = logger;
   }
 
   async resolveDebugConfigurationWithSubstitutedVariables?(
@@ -191,7 +191,7 @@ class MojoDebugConfigurationResolver
   ): Promise<undefined | vscode.DebugConfiguration> {
     const sdk = await findSDKForDebugConfiguration(
       debugConfiguration,
-      this.sdkManager,
+      this.envManager,
     );
     // We don't need to show error messages here because
     // `findSDKConfigForDebugSession` does that.
@@ -211,7 +211,7 @@ class MojoDebugConfigurationResolver
         const message = `Mojo Debug error: the file '${
           debugConfiguration.mojoFile
         }' doesn't have the .🔥 or .mojo extension.`;
-        this.sdkManager.logger.error(message);
+        this.logger.error(message);
         vscode.window.showErrorMessage(message);
         return undefined;
       }
@@ -224,7 +224,7 @@ class MojoDebugConfigurationResolver
         debugConfiguration.mojoFile,
         ...(debugConfiguration.args || []),
       ];
-      debugConfiguration.program = sdk.config.mojoDriverPath;
+      debugConfiguration.program = sdk.mojoPath;
     }
 
     // We give preference to the init commands specified by the user.
@@ -277,7 +277,7 @@ class MojoDebugConfigurationResolver
 
     // Pull in the additional visualizers within the lldb-visualizers dir.
     if (await sdk.lldbHasPythonScriptingSupport()) {
-      const visualizersDir = sdk.config.mojoLLDBVisualizersPath;
+      const visualizersDir = sdk.visualizersPath;
       const visualizers = await vscode.workspace.fs.readDirectory(
         vscode.Uri.file(visualizersDir),
       );
@@ -291,7 +291,7 @@ class MojoDebugConfigurationResolver
       `LLDB_VSCODE_RIT_TIMEOUT_IN_MS=${initializationTimeoutSec * 1000}`, // runInTerminal initialization timeout.
     ];
 
-    env.push(`MODULAR_HOME=${sdk.config.modularHomePath}`);
+    env.push(`MODULAR_HOME=${sdk.homePath}`);
 
     debugConfiguration.env = [...env, ...(debugConfiguration.env || [])];
     return debugConfiguration as vscode.DebugConfiguration;
@@ -324,10 +324,12 @@ class MojoDebugConfigurationResolver
 class MojoCudaGdbDebugConfigurationResolver
   implements vscode.DebugConfigurationProvider
 {
-  private sdkManager: MAXSDKManager;
+  private envManager: PythonEnvironmentManager;
+  private logger: Logger;
 
-  constructor(sdkManager: MAXSDKManager) {
-    this.sdkManager = sdkManager;
+  constructor(envManager: PythonEnvironmentManager, logger: Logger) {
+    this.envManager = envManager;
+    this.logger = logger;
   }
 
   async resolveDebugConfigurationWithSubstitutedVariables?(
@@ -335,7 +337,7 @@ class MojoCudaGdbDebugConfigurationResolver
     debugConfigIn: MojoCudaGdbDebugConfiguration,
     _token?: vscode.CancellationToken,
   ): Promise<undefined | vscode.DebugConfiguration> {
-    const maybeErrorMessage = await checkNsightInstall(this.sdkManager.logger);
+    const maybeErrorMessage = await checkNsightInstall(this.logger);
     if (maybeErrorMessage) {
       return undefined;
     }
@@ -346,7 +348,7 @@ class MojoCudaGdbDebugConfigurationResolver
 
     const sdk = await findSDKForDebugConfiguration(
       debugConfigIn as vscode.DebugConfiguration,
-      this.sdkManager,
+      this.envManager,
     );
     // We don't need to show error messages here because
     // `findSDKConfigForDebugSession` does that.
@@ -355,7 +357,7 @@ class MojoCudaGdbDebugConfigurationResolver
     }
     // If we have a mojoFile config, translate it to program plus args.
     if (debugConfigIn.mojoFile) {
-      debugConfig.program = sdk.config.mojoDriverPath;
+      debugConfig.program = sdk.mojoPath;
       args = [
         'run',
         '--no-optimization',
@@ -376,7 +378,7 @@ class MojoCudaGdbDebugConfigurationResolver
     // cuda-gdb takes environment as a list of objects like:
     // [{"name": "HOME", "value": "/home/ubuntu"}]
     let env = [];
-    env.push(`MODULAR_HOME=${sdk.config.modularHomePath}`);
+    env.push(`MODULAR_HOME=${sdk.homePath}`);
     env = [...env, ...(debugConfigIn.env || [])];
     debugConfig.environment = env.map((envStr: string) => {
       const split = envStr.split('=');
@@ -423,17 +425,20 @@ class MojoDebugDynamicConfigurationProvider
  * mojo debugging.
  */
 export class MojoDebugManager extends DisposableContext {
-  private sdkManager: MAXSDKManager;
+  private envManager: PythonEnvironmentManager;
 
-  constructor(extension: MojoExtension, sdkManager: MAXSDKManager) {
+  constructor(extension: MojoExtension, envManager: PythonEnvironmentManager) {
     super();
-    this.sdkManager = sdkManager;
+    this.envManager = envManager;
 
     // Register the lldb-vscode debug adapter.
     this.pushSubscription(
       vscode.debug.registerDebugAdapterDescriptorFactory(
         DEBUG_TYPE,
-        new MojoDebugAdapterDescriptorFactory(this.sdkManager),
+        new MojoDebugAdapterDescriptorFactory(
+          this.envManager,
+          extension.logger,
+        ),
       ),
     );
 
@@ -457,7 +462,7 @@ export class MojoDebugManager extends DisposableContext {
     this.pushSubscription(
       vscode.debug.registerDebugConfigurationProvider(
         DEBUG_TYPE,
-        new MojoDebugConfigurationResolver(sdkManager),
+        new MojoDebugConfigurationResolver(envManager, extension.logger),
       ),
     );
 
@@ -498,7 +503,7 @@ export class MojoDebugManager extends DisposableContext {
     this.pushSubscription(
       vscode.debug.registerDebugConfigurationProvider(
         'mojo-cuda-gdb',
-        new MojoCudaGdbDebugConfigurationResolver(sdkManager),
+        new MojoCudaGdbDebugConfigurationResolver(envManager, extension.logger),
       ),
     );
   }

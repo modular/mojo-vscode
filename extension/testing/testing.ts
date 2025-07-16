@@ -6,13 +6,12 @@
 
 import { execFile } from 'child_process';
 import * as vscode from 'vscode';
-import { MAXSDK } from '../sdk/sdk';
 import * as config from '../utils/config';
 import { DisposableContext } from '../utils/disposableContext';
 import * as path from 'path';
-import { MAXSDKManager } from '../sdk/sdkManager';
 import { Logger } from '../logging';
 import { Optional } from '../types';
+import { PythonEnvironmentManager, SDK } from '../pyenv';
 
 /**
  * An interface defining a source range for a mojo test.
@@ -53,7 +52,7 @@ interface MojoTestExecutionResult {
  * mojo testing.
  */
 export class MojoTestManager extends DisposableContext {
-  private sdkManager: MAXSDKManager;
+  private envManager: PythonEnvironmentManager;
   private controller: vscode.TestController;
   private logger: Logger;
 
@@ -61,9 +60,9 @@ export class MojoTestManager extends DisposableContext {
   private docTestTag = new vscode.TestTag('docTest');
   private unitTestTag = new vscode.TestTag('unitTest');
 
-  constructor(sdkManager: MAXSDKManager, logger: Logger) {
+  constructor(envManager: PythonEnvironmentManager, logger: Logger) {
     super();
-    this.sdkManager = sdkManager;
+    this.envManager = envManager;
     this.logger = logger;
 
     // Register the mojo test controller.
@@ -268,7 +267,7 @@ export class MojoTestManager extends DisposableContext {
     };
 
     // Grab the sdk for the execution context.
-    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ false);
+    const sdk = await this.envManager.getActiveSDK();
     if (!sdk) {
       this.controller.items.delete(test.uri!.fsPath);
       return;
@@ -343,7 +342,7 @@ export class MojoTestManager extends DisposableContext {
    * arguments. Returns the json output of running the command.
    */
   async runMojoTestCommand<Result>(
-    sdk: MAXSDK,
+    sdk: SDK,
     testId: string,
     workspaceFolder: Optional<vscode.WorkspaceFolder>,
     args: string[] = [],
@@ -362,7 +361,7 @@ export class MojoTestManager extends DisposableContext {
 
     return new Promise<Optional<Result>>(function (resolve, _reject) {
       execFile(
-        sdk.config.mojoDriverPath,
+        sdk.mojoPath,
         ['test', '--diagnostic-format', 'json', testId, ...args],
         { env },
         (_error, stdout, _stderr) => {
@@ -392,7 +391,7 @@ export class MojoTestManager extends DisposableContext {
 
     // Invoke the mojo tool to discover tests in the document.
     // We use 'hideRepeatedErrors' because this action is automated.
-    const sdk = await this.sdkManager.findSDK(/*hideRepeatedErrors=*/ true);
+    const sdk = await this.envManager.getActiveSDK();
     if (!sdk) {
       this.controller.items.delete(document.uri.fsPath);
       this.logger.debug(`No SDK present, clearing tests for ${document.uri}`);
