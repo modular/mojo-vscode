@@ -86,7 +86,7 @@ class VsCodeReporter extends Base {
     });
 
     runner.on(EVENT_TEST_PENDING, (test: Test) => {
-      console.log(indent(`${Base.color('pending', test.title)}`));
+      console.log(indent(Base.color('pending', `- ${test.title}`)));
     });
 
     runner.on(EVENT_RUN_END, () => {

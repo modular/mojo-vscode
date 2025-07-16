@@ -37,7 +37,7 @@
     "ci": "npm ci && cd ./lsp-proxy && npm ci",
     "format": "npx prettier . --write --ignore-path .gitignore",
     "publish": "vsce publish",
-    "test": "rm -r out/ && npm run build && vscode-test"
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
