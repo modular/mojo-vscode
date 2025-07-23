@@ -6,7 +6,7 @@
 
 import * as vscode from 'vscode';
 
-import { Logger } from './logging';
+import { Logger, LogLevel } from './logging';
 import { MojoLSPManager } from './lsp/lsp';
 import * as configWatcher from './utils/configWatcher';
 import { DisposableContext } from './utils/disposableContext';
@@ -20,13 +20,6 @@ import { TelemetryReporter } from './telemetry';
 import { PythonEnvironmentManager } from './pyenv';
 
 /**
- * Returns if the given extension context is a nightly build.
- */
-export function isNightlyExtension(context: vscode.ExtensionContext) {
-  return context.extension.id.endsWith('-nightly');
-}
-
-/**
  * This class provides an entry point for the Mojo extension, managing the
  * extension's state and disposal.
  */
@@ -34,20 +27,14 @@ export class MojoExtension extends DisposableContext {
   public logger: Logger;
   public readonly extensionContext: vscode.ExtensionContext;
   public lspManager?: MojoLSPManager;
-  public readonly isNightly: boolean;
   public pyenvManager?: PythonEnvironmentManager;
   private activateMutex = new Mutex();
   private reporter: TelemetryReporter;
 
-  constructor(
-    context: vscode.ExtensionContext,
-    logger: Logger,
-    isNightly: boolean,
-  ) {
+  constructor(context: vscode.ExtensionContext, logger: Logger) {
     super();
     this.extensionContext = context;
     this.logger = logger;
-    this.isNightly = isNightly;
     // NOTE: The telemetry connection string comes from the Azure Application Insights dashboard.
     this.reporter = new TelemetryReporter(
       context.extension.packageJSON.telemetryConnectionString,
@@ -63,13 +50,6 @@ export class MojoExtension extends DisposableContext {
     return await this.activateMutex.runExclusive(async () => {
       if (reloading) {
         this.dispose();
-      }
-
-      if (this.areThereIncompatibleExtensions(this.isNightly)) {
-        this.logger.info(
-          'Not activating the Mojo Context due to another Mojo extension being enabled.',
-        );
-        return this;
       }
 
       this.logger.info(`
@@ -139,39 +119,6 @@ Activating the Mojo Extension
     });
   }
 
-  private areThereIncompatibleExtensions(isNightly: boolean): boolean {
-    const stableExtensionId = 'modular-mojotools.vscode-mojo';
-    const nightlyExtensionId = 'modular-mojotools.vscode-mojo-nightly';
-
-    // Only one Mojo extension can be active at any given time, and intermixing
-    // them can lead to unexpected behavior. If this is a stable extension,
-    // check for a nightly extension, and vice versa.
-    const invalidExtension = vscode.extensions.getExtension(
-      isNightly ? stableExtensionId : nightlyExtensionId,
-    );
-
-    if (!invalidExtension) {
-      return false;
-    }
-
-    vscode.window
-      .showWarningMessage(
-        'You have both the stable and nightly versions of the Mojo ' +
-          'extension enabled. Please disable one of them to avoid ' +
-          'conflicts and then restart the editor.',
-        'Show Extensions',
-      )
-      .then((value) => {
-        if (value === 'Show Extensions') {
-          vscode.commands.executeCommand(
-            'workbench.extensions.search',
-            '@id:' + stableExtensionId + ' ' + '@id:' + nightlyExtensionId,
-          );
-        }
-      });
-    return true;
-  }
-
   override dispose() {
     this.logger.info('Disposing the extension.');
     super.dispose();
@@ -190,15 +137,18 @@ let logHook: (level: string, message: string) => void;
 export async function activate(
   context: vscode.ExtensionContext,
 ): Promise<MojoExtension> {
-  const isNightly = isNightlyExtension(context);
-  logger = new Logger(isNightly);
+  logger = new Logger(
+    context.extensionMode === vscode.ExtensionMode.Production
+      ? LogLevel.Info
+      : LogLevel.Debug,
+  );
 
   if (logHook) {
     logger.main.logCallback = logHook;
     logger.lsp.logCallback = logHook;
   }
 
-  extension = new MojoExtension(context, logger, isNightly);
+  extension = new MojoExtension(context, logger);
   return extension.activate(/*reloading=*/ false);
 }
 
