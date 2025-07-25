@@ -156,17 +156,14 @@ export class Logger extends DisposableContext {
   public main: LogChannel;
   public lsp: LogChannel;
 
-  constructor(isNightly: boolean) {
+  constructor(initialLevel: LogLevel) {
     super();
 
-    const suffix = isNightly ? ' (nightly)' : '';
-    this.main = new LogChannel('Mojo' + suffix);
-    this.lsp = new LogChannel('Mojo Language Server' + suffix);
+    this.main = new LogChannel('Mojo');
+    this.lsp = new LogChannel('Mojo Language Server');
 
-    if (isNightly) {
-      this.main.setOutputLevel(LogLevel.Debug);
-      this.lsp.setOutputLevel(LogLevel.Debug);
-    }
+    this.main.setOutputLevel(initialLevel);
+    this.lsp.setOutputLevel(initialLevel);
 
     this.pushSubscription(this.main);
     this.pushSubscription(this.lsp);
