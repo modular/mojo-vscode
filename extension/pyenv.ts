@@ -15,6 +15,7 @@ import * as util from 'util';
 import { execFile as callbackExecFile } from 'child_process';
 import { Memoize } from 'typescript-memoize';
 import { TelemetryReporter } from './telemetry';
+import { directoryExists } from './utils/files';
 const execFile = util.promisify(callbackExecFile);
 
 export enum SDKKind {
@@ -95,6 +96,7 @@ export class PythonEnvironmentManager extends DisposableContext {
   private reporter: TelemetryReporter;
   public onEnvironmentChange: vscode.Event<void>;
   private envChangeEmitter: vscode.EventEmitter<void>;
+  private displayedSDKError: boolean = false;
 
   constructor(logger: Logger, reporter: TelemetryReporter) {
     super();
@@ -107,16 +109,10 @@ export class PythonEnvironmentManager extends DisposableContext {
   public async init() {
     this.api = await PythonExtension.api();
     this.pushSubscription(
-      this.api.environments.onDidChangeActiveEnvironmentPath((_) =>
-        this.envChangeEmitter.fire(),
-      ),
-    );
-  }
-
-  /// Inform the user that they need to install the MAX SDK.
-  public async showInstallWarning() {
-    await vscode.window.showErrorMessage(
-      'The MAX SDK is not installed in your current Python environment. Please install the MAX SDK or select a Python environment with MAX installed.',
+      this.api.environments.onDidChangeActiveEnvironmentPath((_) => {
+        this.displayedSDKError = false;
+        this.envChangeEmitter.fire();
+      }),
     );
   }
 
@@ -127,6 +123,9 @@ export class PythonEnvironmentManager extends DisposableContext {
     const monorepoSDK = await this.tryGetMonorepoSDK();
 
     if (monorepoSDK) {
+      this.logger.info(
+        'Monorepo SDK found, prioritizing that over Python environment.',
+      );
       return monorepoSDK;
     }
 
@@ -135,17 +134,38 @@ export class PythonEnvironmentManager extends DisposableContext {
     this.logger.info('Loading MAX SDK information from Python venv');
 
     if (!env) {
-      return undefined;
-    }
-
-    if (!env.environment) {
+      this.logger.error(
+        'No Python enviroment could be retrieved from the Python extension.',
+      );
+      await this.displaySDKError(
+        'Unable to load a Python enviroment from the VS Code Python extension.',
+      );
       return undefined;
     }
 
     this.logger.info(`Found Python environment at ${envPath.path}`);
 
     const homePath = path.join(env.executable.sysPrefix, 'share', 'max');
+    if (!(await directoryExists(homePath))) {
+      this.logger.error(
+        `SDK home path ${homePath} does not exist in the Python environment's system prefix. MAX is not installed.`,
+      );
+      await this.displaySDKError(
+        `MAX is not installed in Python environment located at ${envPath.path}. Please install the MAX SDK to proceed.`,
+      );
+      return undefined;
+    }
+
     return this.createSDKFromHomePath(SDKKind.Environment, homePath);
+  }
+
+  private async displaySDKError(message: string) {
+    if (this.displayedSDKError) {
+      return;
+    }
+
+    this.displayedSDKError = true;
+    await vscode.window.showErrorMessage(message);
   }
 
   /// Attempts to create a SDK from a home path. Returns undefined if creation failed.
@@ -154,13 +174,41 @@ export class PythonEnvironmentManager extends DisposableContext {
     homePath: string,
   ): Promise<SDK | undefined> {
     const modularCfgPath = path.join(homePath, 'modular.cfg');
+    const decoder = new TextDecoder();
+    let bytes;
     try {
-      const decoder = new TextDecoder();
-      const bytes = await vscode.workspace.fs.readFile(
+      bytes = await vscode.workspace.fs.readFile(
         vscode.Uri.file(modularCfgPath),
       );
-      const contents = decoder.decode(bytes);
-      const config = ini.parse(contents);
+    } catch (e) {
+      await this.displaySDKError(`Unable to read modular.cfg: ${e}`);
+      this.logger.error('Error reading modular.cfg', e);
+      return undefined;
+    }
+
+    let contents;
+    try {
+      contents = decoder.decode(bytes);
+    } catch (e) {
+      await this.displaySDKError(
+        'Unable to decode modular.cfg; your MAX installation may be corrupted.',
+      );
+      this.logger.error('Error decoding modular.cfg bytes to string', e);
+      return undefined;
+    }
+
+    let config;
+    try {
+      config = ini.parse(contents);
+    } catch (e) {
+      await this.displaySDKError(
+        'Unable to parse modular.cfg; your MAX installation may be corrupted.',
+      );
+      this.logger.error('Error parsing modular.cfg contents as INI', e);
+      return undefined;
+    }
+
+    try {
       const version = 'version' in config.max ? config.max.version : '0.0.0';
       this.logger.info(`Found SDK with version ${version}`);
 
@@ -183,7 +231,10 @@ export class PythonEnvironmentManager extends DisposableContext {
         config['mojo-max']['lldb_path'],
       );
     } catch (e) {
-      this.logger.error('Error loading SDK', e);
+      await this.displaySDKError(
+        'Unable to read a configuration key from modular.cfg; your MAX installation may be corrupted.',
+      );
+      this.logger.error('Error creating SDK from modular.cfg', e);
       return undefined;
     }
   }
@@ -208,7 +259,8 @@ export class PythonEnvironmentManager extends DisposableContext {
       if (info.type & vscode.FileType.Directory) {
         return this.createSDKFromHomePath(SDKKind.Internal, folder.fsPath);
       }
-    } catch {
+    } catch (e) {
+      this.logger.error(`Error reading ${folder.fsPath}`, e);
       return undefined;
     }
   }

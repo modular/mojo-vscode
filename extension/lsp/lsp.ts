@@ -204,7 +204,6 @@ export class MojoLSPManager extends DisposableContext {
     const sdk = await this.envManager.getActiveSDK();
 
     if (!sdk) {
-      await this.envManager.showInstallWarning();
       return;
     }
 
