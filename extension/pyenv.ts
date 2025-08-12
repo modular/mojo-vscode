@@ -97,6 +97,7 @@ export class PythonEnvironmentManager extends DisposableContext {
   public onEnvironmentChange: vscode.Event<void>;
   private envChangeEmitter: vscode.EventEmitter<void>;
   private displayedSDKError: boolean = false;
+  private lastLoadedEnv: string | undefined = undefined;
 
   constructor(logger: Logger, reporter: TelemetryReporter) {
     super();
@@ -109,14 +110,24 @@ export class PythonEnvironmentManager extends DisposableContext {
   public async init() {
     this.api = await PythonExtension.api();
     this.pushSubscription(
-      this.api.environments.onDidChangeActiveEnvironmentPath((_) => {
-        this.displayedSDKError = false;
-        this.envChangeEmitter.fire();
-      }),
+      this.api.environments.onDidChangeActiveEnvironmentPath((p) =>
+        this.handleEnvironmentChange(p.path),
+      ),
     );
   }
 
-  /// Retrieves the active SDK from the currently active Python virtual environment, or undefined if one is not present.
+  private async handleEnvironmentChange(newEnv: string) {
+    this.logger.debug(
+      `Active environment path change: ${newEnv} (current: ${this.lastLoadedEnv})`,
+    );
+    if (newEnv != this.lastLoadedEnv) {
+      this.logger.info('Python environment has changed, reloading SDK');
+      this.envChangeEmitter.fire();
+      this.displayedSDKError = false;
+    }
+  }
+
+  /// Load the active SDK from the currently active Python environment, or undefined if one is not present.
   public async getActiveSDK(): Promise<SDK | undefined> {
     assert(this.api !== undefined);
     // Prioritize retrieving a monorepo SDK over querying the environment.
@@ -131,7 +142,8 @@ export class PythonEnvironmentManager extends DisposableContext {
 
     const envPath = this.api.environments.getActiveEnvironmentPath();
     const env = await this.api.environments.resolveEnvironment(envPath);
-    this.logger.info('Loading MAX SDK information from Python venv');
+    this.logger.info('Loading MAX SDK information from Python environment');
+    this.lastLoadedEnv = envPath.path;
 
     if (!env) {
       this.logger.error(
@@ -156,7 +168,7 @@ export class PythonEnvironmentManager extends DisposableContext {
       return undefined;
     }
 
-    return this.createSDKFromHomePath(SDKKind.Environment, homePath);
+    return await this.createSDKFromHomePath(SDKKind.Environment, homePath);
   }
 
   private async displaySDKError(message: string) {
@@ -259,8 +271,7 @@ export class PythonEnvironmentManager extends DisposableContext {
       if (info.type & vscode.FileType.Directory) {
         return this.createSDKFromHomePath(SDKKind.Internal, folder.fsPath);
       }
-    } catch (e) {
-      this.logger.error(`Error reading ${folder.fsPath}`, e);
+    } catch {
       return undefined;
     }
   }

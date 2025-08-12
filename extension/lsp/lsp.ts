@@ -191,6 +191,7 @@ export class MojoLSPManager extends DisposableContext {
 
     this.pushSubscription(
       this.envManager.onEnvironmentChange(() => {
+        this.logger.info('Restarting language server due to SDK change');
         vscode.commands.executeCommand('mojo.lsp.restart');
       }),
     );
@@ -255,8 +256,11 @@ export class MojoLSPManager extends DisposableContext {
     };
 
     const module = this.extensionContext.asAbsolutePath(
-      path.join('out', 'proxy.js'),
+      this.extensionContext.extensionMode == vscode.ExtensionMode.Development
+        ? path.join('lsp-proxy', 'out', 'proxy.js')
+        : path.join('out', 'proxy.js'),
     );
+
     const serverOptions: vscodelc.ServerOptions = {
       run: { module, transport: TransportKind.ipc },
       debug: { module, transport: TransportKind.ipc },
