@@ -44,11 +44,11 @@ jobs:
       - name: Upload extension to VS Code marketplace
         if: ${{ inputs.publish }}
         env:
-          VSCE_PAT: ${{ secrets.codeMarketplaceToken }}
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: npx vsce publish --packagePath ${{ needs.build.outputs.vsix }}
 
       - name: Upload extension to Open-VSX marketplace
         if: ${{ inputs.publish }}
         env:
-          OVSX_PAT: ${{ secrets.ovsxToken }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: npx ovsx publish ${{ needs.build.outputs.vsix }}
