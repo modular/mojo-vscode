@@ -35,7 +35,7 @@
     "build": "tsc -b ./ && tsc -b ./lsp-proxy",
     "package": "vsce package --out ./out/vscode-mojo.vsix",
     "ci": "npm ci && cd ./lsp-proxy && npm ci",
-    "format": "npx prettier . --write --ignore-path .gitignore",
+    "format": "npx prettier . --write --ignore-path .gitignore --ignore-path fixtures/pixi-workspace/.gitignore",
     "publish": "vsce publish",
     "test": "vscode-test"
   },
