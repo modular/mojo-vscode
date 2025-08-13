@@ -67,10 +67,10 @@ pull request:
 
 1. Fork and clone this repo:
 
-   Go to the [modular repo home](https://github.com/modular/modular) and click
+   Go to the [repo home](https://github.com/modular/mojo-vscode) and click
    the **Fork** button at the top.
 
-   Your fork will be accessible at `https://github.com/<your-username>/modular`.
+   Your fork will be accessible at `https://github.com/<your-username>/mojo-vscode`.
 
    Clone your forked repo to your computer:
 
@@ -81,7 +81,7 @@ pull request:
 
    To clarify, you're working with three repo entities:
 
-   - This repo (`https://github.com/modular/modular`) is known as the upstream
+   - This repo (`https://github.com/modular/mojo-vscode`) is known as the upstream
      repo. In Git terminology, it's the _upstream remote_.
    - Your fork on GitHub is known as _origin_ (also remote).
    - Your local clone is stored on our computer.
@@ -90,7 +90,7 @@ pull request:
    crucial to configure our local clone to track upstream changes:
 
    ```bash
-   git remote add upstream git@github.com:modular/modular.git
+   git remote add upstream git@github.com:modular/mojo-vscode.git
    ```
 
    Then sync your fork to the latest code from upstream:
@@ -131,13 +131,13 @@ pull request:
 
    ```plaintext
    remote: Create a pull request for 'my-fix' on GitHub by visiting:
-   remote:      https://github.com/[your-username]/modular/pull/new/my-fix
+   remote:      https://github.com/[your-username]/mojo-vscode/pull/new/my-fix
    ```
 
    You can open that URL or visit your fork on GitHub and click **Contribute** to
    start a pull request.
 
-   GitHub should automatically set the base repository to `modular/modular`
+   GitHub should automatically set the base repository to `modular/mojo-vscode`
    and the base (branch) to `main`. If not, you can select it from the drop-down.
    Then click **Create pull request**.
 
