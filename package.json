@@ -135,14 +135,6 @@
       "type": "object",
       "title": "Mojo",
       "properties": {
-        "mojo.SDK.additionalSDKs": {
-          "scope": "machine",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "A list of MAX SDK roots (folders containing a modular.cfg file) available to the extension when determining a default SDK to use. Corrupt or erroneous folders will be ignored. You can select the default SDK to use with the `Mojo: Select the default MAX SDK` command."
-        },
         "mojo.onSettingsChanged": {
           "type": "string",
           "default": "prompt",
@@ -239,16 +231,6 @@
         "command": "mojo.debug.attach-to-process",
         "icon": "$(debug)",
         "title": "Attach to Process"
-      },
-      {
-        "category": "Mojo",
-        "command": "mojo.sdk.reinstall",
-        "title": "Reinstall the MAX SDK for VS Code"
-      },
-      {
-        "category": "Mojo",
-        "command": "mojo.sdk.select-default",
-        "title": "Select the default MAX SDK"
       }
     ],
     "submenus": [

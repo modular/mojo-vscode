@@ -18,34 +18,13 @@ This VS Code extension from the Modular team adds support for the
 
 ## Get started
 
-1. Install the Mojo SDK.
-2. Install the Mojo VS Code extension.
+1. [Install the MAX SDK.](https://docs.modular.com/max/get-started/)
+2. Open the folder you installed MAX in.
 3. Open any `.mojo` or `.🔥` file.
-
-## Configuration
-
-The extension will attempt to find the path of the Mojo SDK installation using
-the `MODULAR_HOME` environment variable. If `MODULAR_HOME` is not set within
-the environment, the path can be explicitly set via the `mojo.modularHomePath`
-extension setting.
-
-```json
-{
-  "mojo.modularHomePath": "/absolute/path/to/.modular"
-}
-```
 
 ### Mojo SDK Resolution
 
-Whenever you want to execute an action on a file, the extension will look for a
-suitable Mojo SDK that can serve it. The search will start with the
-`mojo.modularHomePath` setting of the file's Workspace, if available. Otherwise,
-the extension will try the to use the same setting but at the User-level. Then,
-it will try to use the `MODULAR_HOME` environment variable. If none of these
-attempts works, the extension will fall back to use the `mojo.modularHomePath`
-setting defined at the Workspace-level of any open Workspaces in the current
-window. This is particularly useful if the user opens Mojo files that don't
-belong to any active Workspace and wants to get some extension support.
+The extension relies on the Python extension for locating your Python environment. In some cases, this appears to default to your globally-installed environment, even when a virtual environment exists. If the Mojo extension cannot find your SDK installation, try invoking the `Python: Set Project Environment` command and selecting your virtual environment.
 
 ## Debugger
 
@@ -151,12 +130,12 @@ You may bind hotkeys to any of the actions listed here. For example, to bind a
 hotkey for the "Run Mojo File" action, open preferences, then select
 `Keyboard Shortcuts > Mojo: Run Mojo File`.
 
-### Run Mojo File
+### `Run Mojo File`
 
 This executes the current Mojo file in a terminal that is reused by other
 invocations of this same action, even if they run a different file.
 
-### Run Mojo File in Dedicated Terminal
+### `Run Mojo File in Dedicated Terminal`
 
 This executes the current Mojo file in a dedicated terminal that is reused only
 by subsequent runs of this very same file.
