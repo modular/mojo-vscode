@@ -22,22 +22,16 @@ jobs:
         shell: bash
 
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
-        with:
-          node-version: 20
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - uses: ./.github/actions/setup
 
       - name: Setup Pixi
         uses: prefix-dev/setup-pixi@273e4808c831936a3ce1a3080c829d9e153143d3
         with:
           pixi-version: v0.49.0
           run-install: false
-
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Install dependencies
-        run: npm run ci
 
       - name: Initialize Pixi workspace
         working-directory: fixtures/pixi-workspace
