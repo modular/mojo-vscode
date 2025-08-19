@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+  workflow_call:
+
 jobs:
   build:
     name: Build extension
@@ -14,6 +16,9 @@ jobs:
     defaults:
       run:
         shell: bash
+
+    outputs:
+      vsix: ${{ steps.output.outputs.vsix }}
 
     steps:
       - name: Checkout repository
@@ -26,6 +31,10 @@ jobs:
 
       - name: Package extension
         run: npm run package
+
+      - name: Output packaged extension
+        id: output
+        run: echo 'vsix=./out/vscode-mojo.vsix' >> $GITHUB_OUTPUT
 
       - name: Upload extension as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
