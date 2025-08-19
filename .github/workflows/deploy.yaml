@@ -67,16 +67,10 @@ jobs:
         shell: bash
 
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
-        with:
-          node-version: 20
-
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Install dependencies
-        run: npm run ci
+      - uses: ./.github/actions/setup
 
       - name: Upload extension to VS Code marketplace
         if: ${{ inputs.publish }}
