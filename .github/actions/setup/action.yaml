@@ -1,0 +1,24 @@
+name: Set up environment
+description: Set up the environment for workflows
+runs:
+  using: composite
+  steps:
+      - name: Setup Node
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        with:
+          node-version: 20
+
+      - name: Cache Node packages
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        with:
+          key: npm-${{ hashFiles('package-lock.json', 'lsp-proxy/package-lock.json') }}
+          path: |
+            node_modules
+            lsp-proxy/node_modules
+
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install dependencies
+        shell: bash
+        run: npm run ci
