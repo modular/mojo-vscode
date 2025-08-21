@@ -18,7 +18,7 @@ jobs:
         shell: bash
 
     outputs:
-      vsix: ${{ steps.output.outputs.vsix }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
 
     steps:
       - name: Checkout repository
@@ -32,12 +32,9 @@ jobs:
       - name: Package extension
         run: npm run package
 
-      - name: Output packaged extension
-        id: output
-        run: echo 'vsix=./out/vscode-mojo.vsix' >> $GITHUB_OUTPUT
-
       - name: Upload extension as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: upload
         with:
           name: extension-${{ github.sha }}
           path: ./out/vscode-mojo.vsix

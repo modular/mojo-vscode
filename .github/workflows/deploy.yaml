@@ -33,6 +33,9 @@ jobs:
       run:
         shell: bash
 
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+
     steps:
       - name: Setup Node
         uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
@@ -46,12 +49,14 @@ jobs:
         run: npm version ${{ inputs.new_version }}
 
       - name: Commit version bump
+        id: bump
         run: |
           export VERSION=$(jq -r '.version' package.json)
           git config --global user.name 'Release Bot'
           git config --global user.email 'modularbot@modular.com'
           git commit -am "Release version ${VERSION}"
           git push
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
   build:
     needs: [version]
@@ -60,7 +65,7 @@ jobs:
   publish:
     name: Publish extension
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [version, build]
 
     defaults:
       run:
@@ -72,14 +77,30 @@ jobs:
 
       - uses: ./.github/actions/setup
 
+      - name: Download built VSIX
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        id: download
+        with:
+          name: ${{ needs.build.outputs.artifact-id }}
+
       - name: Upload extension to VS Code marketplace
         if: ${{ inputs.publish }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx vsce publish --packagePath ${{ needs.build.outputs.vsix }}
+        run: npx vsce publish --packagePath ${{ steps.download.outputs.download-path }}
 
       - name: Upload extension to Open-VSX marketplace
         if: ${{ inputs.publish }}
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: npx ovsx publish ${{ needs.build.outputs.vsix }}
+        run: npx ovsx publish ${{ steps.download.outputs.download-path }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
+        with:
+          draft: true
+          tag_name: v${{ needs.version.output.version }}
+          release_name: v${{ needs.version.output.version }}
+          token: ${{ github.token }}
+          files: ${{ steps.download.outputs.download-path }}
+          generate_release_notes: true
