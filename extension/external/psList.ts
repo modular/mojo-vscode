@@ -1,9 +1,3 @@
-//===----------------------------------------------------------------------===//
-//
-// This file is Modular Inc proprietary.
-//
-//===----------------------------------------------------------------------===//
-
 // This file has been copied from https://github.com/sindresorhus/ps-list
 // using commit 6dbe8d6.
 // We have to copy paste it instead of adding it as a regular dependency
