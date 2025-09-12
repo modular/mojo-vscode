@@ -7,16 +7,20 @@
 import * as vscode from 'vscode';
 import * as ini from 'ini';
 import { DisposableContext } from './utils/disposableContext';
-import { PythonExtension } from '@vscode/python-extension';
+import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
 import assert from 'assert';
 import { Logger } from './logging';
 import path from 'path';
 import * as util from 'util';
-import { execFile as callbackExecFile } from 'child_process';
+import {
+  execFile as callbackExecFile,
+  exec as callbackExec,
+} from 'child_process';
 import { Memoize } from 'typescript-memoize';
 import { TelemetryReporter } from './telemetry';
 import { directoryExists } from './utils/files';
 const execFile = util.promisify(callbackExecFile);
+const exec = util.promisify(callbackExec);
 
 export enum SDKKind {
   Environment = 'environment',
@@ -26,14 +30,14 @@ export enum SDKKind {
 
 /// Represents a usable instance of the MAX SDK.
 export class SDK {
+  public readonly supportsFileDebug: boolean = false;
+
   constructor(
     private logger: Logger,
     /// What kind of SDK this is. Primarily used for logging and context hinting.
     readonly kind: SDKKind,
     /// The unparsed version string of the SDK.
     readonly version: string,
-    /// The home path of the SDK. This is always a directory containing a modular.cfg file.
-    readonly homePath: string,
     /// The path to the language server executable.
     readonly lspPath: string,
     /// The path to the mblack executable.
@@ -83,6 +87,43 @@ export class SDK {
 
   /// Gets an appropriate environment to spawn subprocesses from this SDK.
   public getProcessEnv(withTelemetry: boolean = true) {
+    return {
+      MODULAR_TELEMETRY_ENABLED: withTelemetry ? 'true' : 'false',
+    };
+  }
+}
+
+class HomeSDK extends SDK {
+  public override readonly supportsFileDebug: boolean = true;
+
+  constructor(
+    logger: Logger,
+    kind: SDKKind,
+    version: string,
+    private homePath: string,
+    lspPath: string,
+    mblackPath: string,
+    lldbPluginPath: string,
+    dapPath: string,
+    mojoPath: string,
+    visualizersPath: string,
+    lldbPath: string,
+  ) {
+    super(
+      logger,
+      kind,
+      version,
+      lspPath,
+      mblackPath,
+      lldbPluginPath,
+      dapPath,
+      mojoPath,
+      visualizersPath,
+      lldbPath,
+    );
+  }
+
+  public override getProcessEnv(withTelemetry: boolean = true) {
     return {
       MODULAR_HOME: this.homePath,
       MODULAR_TELEMETRY_ENABLED: withTelemetry ? 'true' : 'false',
@@ -155,20 +196,27 @@ export class PythonEnvironmentManager extends DisposableContext {
       return undefined;
     }
 
-    this.logger.info(`Found Python environment at ${envPath.path}`);
+    this.logger.info(`Found Python environment at ${envPath.path}`, env);
 
-    const homePath = path.join(env.executable.sysPrefix, 'share', 'max');
-    if (!(await directoryExists(homePath))) {
-      this.logger.error(
-        `SDK home path ${homePath} does not exist in the Python environment's system prefix. MAX is not installed.`,
-      );
-      await this.displaySDKError(
-        `MAX is not installed in Python environment located at ${envPath.path}. Please install the MAX SDK to proceed.`,
-      );
-      return undefined;
+    switch (env.environment?.type) {
+      case 'VirtualEnvironment':
+        return this.createSDKFromWheelEnv(env);
+      // Conda virtual environments ship a modular.cfg file that we can use.
+      default: {
+        const homePath = path.join(env.executable.sysPrefix, 'share', 'max');
+        if (!(await directoryExists(homePath))) {
+          this.logger.error(
+            `SDK home path ${homePath} does not exist in the Python environment's system prefix. MAX is not installed.`,
+          );
+          await this.displaySDKError(
+            `MAX is not installed in Python environment located at ${envPath.path}. Please install the MAX SDK to proceed.`,
+          );
+          return undefined;
+        }
+
+        return await this.createSDKFromHomePath(SDKKind.Environment, homePath);
+      }
     }
-
-    return await this.createSDKFromHomePath(SDKKind.Environment, homePath);
   }
 
   private async displaySDKError(message: string) {
@@ -178,6 +226,80 @@ export class PythonEnvironmentManager extends DisposableContext {
 
     this.displayedSDKError = true;
     await vscode.window.showErrorMessage(message);
+  }
+
+  private async createSDKFromWheelEnv(
+    env: ResolvedEnvironment,
+  ): Promise<SDK | undefined> {
+    const binPath = path.join(env.executable.sysPrefix, 'bin');
+    const libPath = path.join(
+      env.executable.sysPrefix,
+      'lib',
+      `python${env.version!.major}.${env.version!.minor}`,
+      'site-packages',
+      'modular',
+      'lib',
+    );
+    // helper to pull required files/folders out of the environment
+    const retrievePath = async (target: string) => {
+      try {
+        // stat-ing the path confirms it exists in some form; if an exception is thrown then it doesn't exist.
+        await vscode.workspace.fs.stat(vscode.Uri.file(target));
+        return target;
+      } catch {
+        this.logger.error(`Missing path ${target} in venv.`);
+        return undefined;
+      }
+    };
+
+    const libExt = process.platform == 'darwin' ? 'dylib' : 'so';
+
+    const mojoPath = await retrievePath(path.join(binPath, 'mojo'));
+    const lspPath = await retrievePath(path.join(binPath, 'mojo-lsp-server'));
+    const lldbPluginPath = await retrievePath(
+      path.join(libPath, `libMojoLLDB.${libExt}`),
+    );
+    const mblackPath = await retrievePath(path.join(binPath, 'mblack'));
+    const dapPath = await retrievePath(path.join(binPath, 'lldb-dap'));
+    const visualizerPath = await retrievePath(
+      path.join(libPath, 'lldb-visualizers'),
+    );
+    const lldbPath = await retrievePath(path.join(binPath, 'mojo-lldb'));
+    // The debugger requires that we avoid using the wrapped `mojo` entrypoint for specific scenarios.
+    const rawMojoPath = await retrievePath(
+      path.join(libPath, '..', 'bin', 'mojo'),
+    );
+
+    if (
+      !mojoPath ||
+      !lspPath ||
+      !lldbPluginPath ||
+      !rawMojoPath ||
+      !mblackPath ||
+      !lldbPluginPath ||
+      !dapPath ||
+      !visualizerPath ||
+      !lldbPath
+    ) {
+      return undefined;
+    }
+
+    // We don't know the version intrinsically so we need to invoke it ourselves.
+
+    // We don't know the version intrinsically so we need to invoke it ourselves.
+    const versionResult = await exec(`"${mojoPath}" --version`);
+    return new SDK(
+      this.logger,
+      SDKKind.Environment,
+      versionResult.stdout,
+      lspPath,
+      mblackPath,
+      lldbPluginPath,
+      dapPath,
+      mojoPath,
+      visualizerPath,
+      lldbPath,
+    );
   }
 
   /// Attempts to create a SDK from a home path. Returns undefined if creation failed.
@@ -229,7 +351,7 @@ export class PythonEnvironmentManager extends DisposableContext {
         kind,
       });
 
-      return new SDK(
+      return new HomeSDK(
         this.logger,
         kind,
         version,
