@@ -1,4 +1,4 @@
-//===----------------------------------------------------------------------===
+//===----------------------------------------------------------------------===//
 // Copyright (c) 2025, Modular Inc. All rights reserved.
 //
 // Licensed under the Apache License v2.0 with LLVM Exceptions:
@@ -9,7 +9,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//===----------------------------------------------------------------------===
+//===----------------------------------------------------------------------===//
 //
 // Implements a wrapper around @vscode/extension-telemetry to allow us more
 // control over the telemetry reporting process.
