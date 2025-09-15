@@ -18,7 +18,7 @@ import {
 } from 'child_process';
 import { Memoize } from 'typescript-memoize';
 import { TelemetryReporter } from './telemetry';
-import { directoryExists } from './utils/files';
+import { fileExists } from './utils/files';
 const execFile = util.promisify(callbackExecFile);
 const exec = util.promisify(callbackExec);
 
@@ -196,26 +196,23 @@ export class PythonEnvironmentManager extends DisposableContext {
       return undefined;
     }
 
+    // We cannot use the environment type information reported by the Python
+    // extension because it considers Conda and wheel-based installs to be the
+    // same, when we need to differentiate them.
     this.logger.info(`Found Python environment at ${envPath.path}`, env);
-
-    switch (env.environment?.type) {
-      case 'VirtualEnvironment':
-        return this.createSDKFromWheelEnv(env);
-      // Conda virtual environments ship a modular.cfg file that we can use.
-      default: {
-        const homePath = path.join(env.executable.sysPrefix, 'share', 'max');
-        if (!(await directoryExists(homePath))) {
-          this.logger.error(
-            `SDK home path ${homePath} does not exist in the Python environment's system prefix. MAX is not installed.`,
-          );
-          await this.displaySDKError(
-            `MAX is not installed in Python environment located at ${envPath.path}. Please install the MAX SDK to proceed.`,
-          );
-          return undefined;
-        }
-
-        return await this.createSDKFromHomePath(SDKKind.Environment, homePath);
-      }
+    if (await this.envHasModularCfg(env)) {
+      this.logger.info(
+        `Python environment '${envPath.path}' appears to be Conda-like; using modular.cfg method.`,
+      );
+      return this.createSDKFromHomePath(
+        SDKKind.Environment,
+        path.join(env.executable.sysPrefix, 'share', 'max'),
+      );
+    } else {
+      this.logger.info(
+        `Python environment '${envPath.path}' does not have a modular.cfg file; assuming wheel installation.`,
+      );
+      return this.createSDKFromWheelEnv(env);
     }
   }
 
@@ -226,6 +223,12 @@ export class PythonEnvironmentManager extends DisposableContext {
 
     this.displayedSDKError = true;
     await vscode.window.showErrorMessage(message);
+  }
+
+  private async envHasModularCfg(env: ResolvedEnvironment): Promise<boolean> {
+    return fileExists(
+      path.join(env.executable.sysPrefix, 'share', 'max', 'modular.cfg'),
+    );
   }
 
   private async createSDKFromWheelEnv(
@@ -242,6 +245,7 @@ export class PythonEnvironmentManager extends DisposableContext {
     );
     // helper to pull required files/folders out of the environment
     const retrievePath = async (target: string) => {
+      this.logger.debug(`Retrieving tool path '${target}'.`);
       try {
         // stat-ing the path confirms it exists in some form; if an exception is thrown then it doesn't exist.
         await vscode.workspace.fs.stat(vscode.Uri.file(target));
@@ -283,8 +287,6 @@ export class PythonEnvironmentManager extends DisposableContext {
     ) {
       return undefined;
     }
-
-    // We don't know the version intrinsically so we need to invoke it ourselves.
 
     // We don't know the version intrinsically so we need to invoke it ourselves.
     const versionResult = await exec(`"${mojoPath}" --version`);
