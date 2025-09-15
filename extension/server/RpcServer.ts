@@ -1,9 +1,3 @@
-//===----------------------------------------------------------------------===//
-//
-// This file is Modular Inc proprietary.
-//
-//===----------------------------------------------------------------------===//
-
 // The following code is a modification of
 // https://github.com/vadimcn/codelldb/blob/master/extension/externalLaunch.ts,
 // which has MIT license.

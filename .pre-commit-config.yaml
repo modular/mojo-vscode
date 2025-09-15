@@ -33,3 +33,8 @@ repos:
         types_or: [javascript, ts]
         additional_dependencies:
           - 'typescript@^4.6.4'
+
+      - id: check-license-headers
+        name: check license headers
+        language: python
+        entry: python ./utils/license.py

@@ -1,9 +1,3 @@
-//===----------------------------------------------------------------------===//
-//
-// This file is Modular Inc proprietary.
-//
-//===----------------------------------------------------------------------===//
-
 // This file is a modified copy from
 // https://github.com/prettier/prettier-vscode/blob/main/src/logger.ts
 // which has MIT license.
