@@ -215,7 +215,7 @@ class ExecutionManager extends DisposableContext {
    * Get a terminal to use for the given file.
    */
   getTerminalForFile(doc: vscode.TextDocument, sdk: SDK): vscode.Terminal {
-    const fullId = `${doc.fileName} · ${sdk.homePath}`;
+    const fullId = `${doc.fileName} · ${sdk.mojoPath}`;
     // We have to keep the full terminal name short so that VS Code renders it nicely,
     // and we have to keep it unique among other files.
     const terminalName = `Mojo: ${path.basename(doc.fileName)} · ${md5(fullId).substring(0, 5)}`;

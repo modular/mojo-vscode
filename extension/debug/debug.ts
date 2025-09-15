@@ -13,12 +13,9 @@ import { activatePickProcessToAttachCommand } from './attachQuickPick';
 import { initializeInlineLocalVariablesProvider } from './inlineVariables';
 import { MojoExtension } from '../extension';
 import { quote } from 'shell-quote';
-import * as util from 'util';
-import { execFile as execFileBase } from 'child_process';
 import { Optional } from '../types';
 import { PythonEnvironmentManager, SDK, SDKKind } from '../pyenv';
 import { Logger } from '../logging';
-const execFile = util.promisify(execFileBase);
 
 /**
  * Stricter version of vscode.DebugConfiguration intended to reduce the chances
@@ -70,6 +67,10 @@ type MojoCudaGdbDebugConfiguration = {
  */
 const DEBUG_TYPE: string = 'mojo-lldb';
 
+function envDictToList(dict: { [key: string]: string }): string[] {
+  return Object.entries(dict).map(([k, v]) => `${k}=${v}`);
+}
+
 /**
  * Some debug configurations come from an RPC call, which have an explicit SDK
  * to use. We should honor it when running the debug session.
@@ -117,31 +118,6 @@ class MojoDebugAdapterDescriptorFactory
       return undefined;
     }
     this.logger.info(`Using the SDK ${sdk.version} for the debug session`);
-    if (sdk.homePath.endsWith('.derived')) {
-      // Debug adapters from dev sdks tend to be corrupted because dependencies
-      // might need to be rebuilt, so we run a simple verification.
-      try {
-        await execFile(sdk.dapPath, ['--help']);
-      } catch (ex: any) {
-        const { stderr, stdout } = ex;
-        this.logger.main.outputChannel.appendLine(
-          '\n\n\n===== LLDB Debug Adapter verification =====',
-        );
-        this.logger.error('Unable to execute the LLDB Debug Adapter.', ex);
-        if (stdout) {
-          this.logger.info('stdout: ' + stdout);
-        }
-        if (stderr) {
-          this.logger.info('stderr: ' + stderr);
-        }
-        this.logger.main.outputChannel.show();
-
-        // this.envManager.showBazelwRunInstallPrompt(
-        //   'The LLDB Debug Adapter seems to be corrupted.',
-        //   sdk.homePath,
-        // );
-      }
-    }
 
     return new vscode.DebugAdapterExecutable(sdk.dapPath, [
       '--repl-mode',
@@ -204,6 +180,23 @@ class MojoDebugConfigurationResolver
     }
 
     if (debugConfiguration.mojoFile) {
+      // Wheel environments do not ship a modular.cfg file that we can use to
+      // invoke 'mojo run' directly. They instead use a wrapper, which can't be
+      // launched under lldb. It's technically possible to launch the underlying
+      // binary directly, but without a modular.cfg file we would need to set a
+      // number of environment variables. We choose not to do that and instead
+      // just disallow debugging a specific file when the SDK is installed via a
+      // Python wheel.
+      if (!sdk.supportsFileDebug) {
+        this.logger.error(
+          `Cannot launch debug session with mojoFile specified (was '${debugConfiguration.mojoFile}') because MAX was installed as a wheel.`,
+        );
+        vscode.window.showErrorMessage(
+          "Debugging a Mojo file using the 'mojoFile' option is not supported when the Mojo SDK is installed as a wheel.",
+        );
+        return undefined;
+      }
+
       if (
         !debugConfiguration.mojoFile.endsWith('.🔥') &&
         !debugConfiguration.mojoFile.endsWith('.mojo')
@@ -289,9 +282,8 @@ class MojoDebugConfigurationResolver
 
     const env = [
       `LLDB_VSCODE_RIT_TIMEOUT_IN_MS=${initializationTimeoutSec * 1000}`, // runInTerminal initialization timeout.
+      ...envDictToList(sdk.getProcessEnv()),
     ];
-
-    env.push(`MODULAR_HOME=${sdk.homePath}`);
 
     debugConfiguration.env = [...env, ...(debugConfiguration.env || [])];
     return debugConfiguration as vscode.DebugConfiguration;
@@ -377,9 +369,7 @@ class MojoCudaGdbDebugConfigurationResolver
     debugConfig.args = quote(args || []);
     // cuda-gdb takes environment as a list of objects like:
     // [{"name": "HOME", "value": "/home/ubuntu"}]
-    let env = [];
-    env.push(`MODULAR_HOME=${sdk.homePath}`);
-    env = [...env, ...(debugConfigIn.env || [])];
+    const env = debugConfigIn.env || [];
     debugConfig.environment = env.map((envStr: string) => {
       const split = envStr.split('=');
       return { name: split[0], value: split.slice(1).join('=') };
