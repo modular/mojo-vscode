@@ -108,13 +108,13 @@ jobs:
         if: ${{ inputs.publish }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx vsce publish $PUBLISH_FLAGS --packagePath ${{ steps.download.outputs.download-path }}
+        run: npx vsce publish $PUBLISH_FLAGS --packagePath "${{ steps.download.outputs.download-path }}/vscode-mojo.vsix"
 
       - name: Upload extension to Open-VSX marketplace
         if: ${{ inputs.publish }}
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: npx ovsx publish $PUBLISH_FLAGS ${{ steps.download.outputs.download-path }}
+        run: npx ovsx publish $PUBLISH_FLAGS --packagePath "${{ steps.download.outputs.download-path }}/vscode-mojo.vsix"
 
       - name: Create release
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
