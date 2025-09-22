@@ -55,22 +55,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      - name: Configure Git
+        run: |
+          git config --global user.name 'Release Bot'
+          git config --global user.email 'modularbot@modular.com'
+
       - name: Bump version
         if: ${{ inputs.bump_version }}
         run: npm version ${{ inputs.new_version }}
 
-      - name: Commit version bump
+      - name: Push version bump
         if: ${{ inputs.bump_version }}
-        run: |
-          export VERSION=$(jq -r '.version' package.json)
-          git config --global user.name 'Release Bot'
-          git config --global user.email 'modularbot@modular.com'
-          git commit -am "Release version ${VERSION}"
-          git push
+        run: git push
 
       - name: Extract package version
         id: bump
-        run: echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        run: |
+          export VERSION=$(jq -r '.version' package.json)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
   build:
     needs: [version]
