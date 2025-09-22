@@ -8,14 +8,24 @@ on:
         type: boolean
         default: true
 
+      bump_version:
+        description: Whether to increment the version number before publishing.
+        type: boolean
+        default: true
+
       new_version:
-        description: The new version, passed to the `npm version` command.
+        description: The new version, passed to the `npm version` command. Has no effect if bump_version is off.
         type: choice
         required: true
         options:
           - major
           - minor
           - patch
+
+      pre_release:
+        description: Whether to release as a pre-release version.
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -46,17 +56,21 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Bump version
+        if: ${{ inputs.bump_version }}
         run: npm version ${{ inputs.new_version }}
 
       - name: Commit version bump
-        id: bump
+        if: ${{ inputs.bump_version }}
         run: |
           export VERSION=$(jq -r '.version' package.json)
           git config --global user.name 'Release Bot'
           git config --global user.email 'modularbot@modular.com'
           git commit -am "Release version ${VERSION}"
           git push
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Extract package version
+        id: bump
+        run: echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
   build:
     needs: [version]
@@ -83,17 +97,22 @@ jobs:
         with:
           name: ${{ needs.build.outputs.artifact-id }}
 
+      - name: Enable pre-release builds
+        if: ${{ inputs.pre_release }}
+        run: |
+          echo "PUBLISH_FLAGS=--pre-release" >> "$GITHUB_ENV"
+
       - name: Upload extension to VS Code marketplace
         if: ${{ inputs.publish }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx vsce publish --packagePath ${{ steps.download.outputs.download-path }}
+        run: npx vsce publish $PUBLISH_FLAGS --packagePath ${{ steps.download.outputs.download-path }}
 
       - name: Upload extension to Open-VSX marketplace
         if: ${{ inputs.publish }}
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: npx ovsx publish ${{ steps.download.outputs.download-path }}
+        run: npx ovsx publish $PUBLISH_FLAGS ${{ steps.download.outputs.download-path }}
 
       - name: Create release
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
