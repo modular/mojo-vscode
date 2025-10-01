@@ -18,13 +18,19 @@ This VS Code extension from the Modular team adds support for the
 
 ## Get started
 
-1. [Install the MAX SDK.](https://docs.modular.com/max/get-started/)
-2. Open the folder you installed MAX in.
-3. Open any `.mojo` or `.🔥` file.
+1. [Install Mojo](https://docs.modular.com/mojo/manual/install).
+2. [Install the Mojo VS Code extension](https://marketplace.visualstudio.com/items?itemName=modular-mojotools.vscode-mojo).
+3. Open any `.mojo` or `.🔥` file and start coding.
 
-### Mojo SDK Resolution
+### Mojo SDK resolution
 
-The extension relies on the Python extension for locating your Python environment. In some cases, this appears to default to your globally-installed environment, even when a virtual environment exists. If the Mojo extension cannot find your SDK installation, try invoking the `Python: Set Project Environment` command and selecting your virtual environment.
+The extension relies on the Python extension for locating your Python
+environment. In some cases, this appears to default to your globally-installed
+environment, even when a virtual environment exists.
+
+If the Mojo extension cannot find your SDK installation, try invoking the
+`Python: Set Project Interpreter` command and selecting your virtual
+environment.
 
 ## Debugger
 
@@ -35,9 +41,12 @@ arrow next to the `▶️` button in the top right of a Mojo file, and select
 ![debugging](https://github.com/modular/mojo/assets/77730378/45c547c3-8f08-4f8c-85a4-1254d12a09f5)
 
 The default key is `F5`, and you can rebind the related hotkeys in Preferences:
-Open Keyboard Shortcuts > `Debug: Start Debugging`
+Open Keyboard Shortcuts > `Debug: Start Debugging`.
 
-## Code Completion
+For details, see the [Mojo debugging
+guide](https://docs.modular.com/mojo/tools/debugging).
+
+## Code completion
 
 To trigger a completion press `ctrl + space`, pressing `ctrl + space` again will
 bring up doc hints:
@@ -46,7 +55,7 @@ bring up doc hints:
 
 Rebind the hotkey in Preferences: Open Keyboard Shortcuts > `Trigger Suggest`
 
-## Hover and Doc Hints
+## Hover and doc hints
 
 Hover over a symbol with your cursor for doc hints. The default hotkey
 to trigger it in macOS is `⌘ + k`, `⌘ + i` or `ctrl + k`, `ctrl + i` in Linux
@@ -57,7 +66,7 @@ and Windows:
 Rebind the hotkey in Preferences: Open Keyboard Shortcuts >
 `Show or Focus Hover`
 
-## Signature Help
+## Signature help
 
 Mojo provides function overloading, so you need a way to scroll through the
 multiple signatures available. You can bring this up with the hotkey
@@ -68,7 +77,7 @@ multiple signatures available. You can bring this up with the hotkey
 Rebind related hotkeys in Preferences: Open Keyboard Shortcuts >
 `Trigger Parameter Hints`
 
-## Code Diagnostics
+## Code diagnostics
 
 Code diagnostics are indicated with an underline on the code and details appear
 when you hover. You can also see them in the `PROBLEMS` tab and use
@@ -83,7 +92,7 @@ Rebind related hotkeys in Preferences: Open Keyboard Shortcuts >
 which will display the first line of the diagnostic inline, making it easier
 to quickly fix problems.
 
-## Doc String Code Blocks
+## Doc string code blocks
 
 Unique to Mojo, you get a full LSP experience for code blocks inside doc
 strings, with all the features mentioned here including completions and
@@ -91,7 +100,7 @@ diagnostics:
 
 ![doc-lsp](https://github.com/modular/mojo/assets/77730378/c2d73fd0-66de-44e7-8125-511bf0237396)
 
-## Go to Symbol
+## Go to symbol
 
 You can quickly jump to a symbol in the file with `⌘ + shift + o` in macOS or
 `ctrl + shift + o` in Linux and Windows.
@@ -103,7 +112,7 @@ This also enables the outline view in the explorer window.
 Rebind the hotkey in Preferences: Open Keyboard Shortcuts >
 `Go to Symbol in Editor`
 
-## Quick Fix
+## Quick fix
 
 If there is an available quick fix with the code diagnostic, click
 the lightbulb icon or use the default hotkey `ctrl + .` for a list of options:
@@ -113,7 +122,7 @@ the lightbulb icon or use the default hotkey `ctrl + .` for a list of options:
 Rebind the hotkey in Preferences: Open Keyboard Shortcuts >
 `Quick Fix...`
 
-## Run Mojo File
+## Run Mojo file
 
 The extension provides a set of actions on the top-right of a Mojo file to run
 the active file, which by default are under a small `▶️` button up the
@@ -140,14 +149,14 @@ invocations of this same action, even if they run a different file.
 This executes the current Mojo file in a dedicated terminal that is reused only
 by subsequent runs of this very same file.
 
-## Code Formatting
+## Code formatting
 
 From the command palette run `Format Document` or tick the setting
 `Format on Save`:
 
 ![format](https://github.com/modular/mojo/assets/77730378/4e0e22c4-0216-41d7-b5a5-7f48a018fd81)
 
-## Restarting Mojo Extension
+## Restarting Mojo extension
 
 The extension may crash and produce incorrect results periodically, to fix this
 from the command palette search for `Mojo: Restart the extension`
