@@ -29,7 +29,7 @@ environment. In some cases, this appears to default to your globally-installed
 environment, even when a virtual environment exists.
 
 If the Mojo extension cannot find your SDK installation, try invoking the
-`Python: Set Project Interpreter` command and selecting your virtual
+`Python: Select Interpreter` command and selecting your virtual
 environment.
 
 ## Debugger
