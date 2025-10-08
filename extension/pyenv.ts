@@ -115,6 +115,7 @@ class HomeSDK extends SDK {
     mojoPath: string,
     visualizersPath: string,
     lldbPath: string,
+    private prefixPath?: string,
   ) {
     super(
       logger,
@@ -132,8 +133,10 @@ class HomeSDK extends SDK {
 
   public override getProcessEnv(withTelemetry: boolean = true) {
     return {
+      ...super.getProcessEnv(withTelemetry),
       MODULAR_HOME: this.homePath,
-      MODULAR_TELEMETRY_ENABLED: withTelemetry ? 'true' : 'false',
+      // HACK: Set CONDA_PREFIX to allow debugger wrappers to work
+      CONDA_PREFIX: this.prefixPath,
     };
   }
 }
@@ -214,6 +217,7 @@ export class PythonEnvironmentManager extends DisposableContext {
       return this.createSDKFromHomePath(
         SDKKind.Environment,
         path.join(env.executable.sysPrefix, 'share', 'max'),
+        env.executable.sysPrefix,
       );
     } else {
       this.logger.info(
@@ -315,6 +319,7 @@ export class PythonEnvironmentManager extends DisposableContext {
   public async createSDKFromHomePath(
     kind: SDKKind,
     homePath: string,
+    prefixPath?: string,
   ): Promise<SDK | undefined> {
     const modularCfgPath = path.join(homePath, 'modular.cfg');
     const decoder = new TextDecoder();
@@ -372,6 +377,7 @@ export class PythonEnvironmentManager extends DisposableContext {
         config['mojo-max']['driver_path'],
         config['mojo-max']['lldb_visualizers_path'],
         config['mojo-max']['lldb_path'],
+        prefixPath,
       );
     } catch (e) {
       await this.displaySDKError(

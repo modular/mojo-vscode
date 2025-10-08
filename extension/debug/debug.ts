@@ -126,12 +126,15 @@ class MojoDebugAdapterDescriptorFactory
     }
     this.logger.info(`Using the SDK ${sdk.version} for the debug session`);
 
-    return new vscode.DebugAdapterExecutable(sdk.dapPath, [
-      '--repl-mode',
-      'variable',
-      '--pre-init-command',
-      `?!plugin load '${sdk.lldbPluginPath}'`,
-    ]);
+    this.logger.debug('env', sdk.getProcessEnv());
+
+    return new vscode.DebugAdapterExecutable(
+      sdk.dapPath,
+      ['--repl-mode', 'variable'],
+      {
+        env: sdk.getProcessEnv(),
+      },
+    );
   }
 }
 
@@ -264,6 +267,7 @@ class MojoDebugConfigurationResolver
 
     // This setting shortens the length of address strings.
     const initCommands = [
+      `?!plugin load '${sdk.lldbPluginPath}'`,
       '?settings set target.show-hex-variable-values-with-leading-zeroes false',
       // FIXME(#23274): remove this when we properly emit the opt flag.
       '?settings set target.process.optimization-warnings false',
